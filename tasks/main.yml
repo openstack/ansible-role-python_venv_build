@@ -48,6 +48,7 @@
   file:
     path: "{{ venv_download_path }}/{{ venv_destination_path | dirname }}"
     state: directory
+    owner: "{{ venv_download_path_owner }}"
   delegate_to: localhost
   run_once: yes
 

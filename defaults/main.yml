@@ -45,7 +45,10 @@ pip_install_options: ""
 
 # The path where venvs are stored on the
 # deployment host
-venv_download_path: "/opt/cache/files"
+venv_download_path: "{{ lookup('env', 'HOME') | default('/opt', true) }}/cache/files"
+
+# The owner of the venv_download_path
+venv_download_path_owner: "{{ lookup('env', 'USER') | default('root', true) }}"
 
 # The path where venvs are extracted to
 # on the target host, for example:
