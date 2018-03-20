@@ -13,7 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# The list of distribution packages to install
+#
+# Required variables
+#
+
+# The path where venvs are extracted to
+# on the target host during an install, for example:
+# venv_destination_path: "/openstack/venvs/myvenv"
+
+#
+# Optional variables
+#
+
+# Distribution packages which must be installed
+# on the host for the purpose of building the venv.
 distro_package_list: []
 
 # Set the package install state for packages
@@ -22,34 +35,46 @@ distro_package_state: "latest"
 
 # The time in seconds that the distribution package
 # cache is valid for. This is only used by the apt
-# package manager
+# and zypper package managers.
 distro_cache_valid_time: 600
 
 # Python packages which must be installed
-# on to the host
+# on to the host for the purpose of building
+# the venv.
 host_pip_packages: []
 
+# Arguments to pass to the installation
+# of pip packages on the host.
+host_pip_install_args: ""
+
 # Python packages which must be installed
-# into the venv
+# into the venv.
 venv_pip_packages: []
 
-# General pip install constraints
-pip_install_constraints: ""
+# Arguments to pass to the venv build
+venv_pip_install_args: ""
 
-# Specific constraints for the venv
-pip_install_venv_constraints: ""
+# Enable the reuse of venvs across multiple hosts.
+# This sets the build process to copy the venv to
+# the deployment host once it's built, then to
+# re-use the venv in subsequent deployments.
+venv_reuse_enable: yes
 
-# General pip install extra options
-# This is especially useful for proxy options
-pip_install_options: ""
+# The path where a built venv should be stored on the
+# deployment host.
+venv_reuse_download_path: "{{ lookup('env', 'HOME') | default('/opt', true) }}/cache"
 
-# The path where venvs are stored on the
-# deployment host
-venv_download_path: "{{ lookup('env', 'HOME') | default('/opt', true) }}/cache/files"
+# The owner of the venv_reuse_download_path
+venv_reuse_download_path_owner: "{{ lookup('env', 'USER') | default('root', true) }}"
 
-# The owner of the venv_download_path
-venv_download_path_owner: "{{ lookup('env', 'USER') | default('root', true) }}"
+# The facts to set when the venv changes during a
+# build, or the installation of a venv.
+# Eg:
+# set_facts_when_changed:
+#   - section: glance
+#     option: venv_tag
+#     value: "{{ glance_venv_tag }}"
+venv_facts_when_changed: []
 
-# The path where venvs are extracted to
-# on the target host, for example:
-# venv_destination_path: "/openstack/venvs/myvenv"
+# The INI file name to use for the fact setting.
+venv_facts_dest: "openstack_ansible"
