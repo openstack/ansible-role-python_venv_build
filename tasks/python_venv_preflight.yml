@@ -43,3 +43,13 @@
   run_once: yes
   when:
     - venv_reuse_enable | bool
+
+- name: Ensure that virtualenv is installed on the destination host
+  pip:
+    name: virtualenv
+    state: latest
+    extra_args: "{{ host_pip_install_args }}"
+  register: _install_host_pip_virtualenv
+  until: _install_host_pip_virtualenv | success
+  retries: 5
+  delay: 2
