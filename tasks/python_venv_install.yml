@@ -18,12 +18,14 @@
     src: "{{ venv_reuse_download_path }}/{{ venv_destination_path | basename }}.checksum"
     dest: "{{ venv_destination_path | dirname }}"
   register: _venv_checksum_copy
+  when:
     - _src_venv_present.stat.exists | bool
 
 - name: Remove existing venv on target host if it is changing
   file:
     path: "{{ venv_destination_path }}"
     state: absent
+  when:
     - _venv_checksum_copy is mapping
     - _venv_checksum_copy | changed
 
@@ -37,6 +39,7 @@
     src: "{{ venv_reuse_download_path }}/{{ venv_destination_path | basename }}.tgz"
     dest: "{{ venv_destination_path }}"
     remote_src: no
+  when:
     - _venv_checksum_copy is mapping
     - _venv_checksum_copy | changed
   notify:
