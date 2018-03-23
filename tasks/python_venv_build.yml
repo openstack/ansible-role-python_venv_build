@@ -105,9 +105,9 @@
       flat: yes
     with_items:
       - src: "{{ venv_destination_path }}.tgz"
-        dest: "{{ venv_reuse_download_path }}/{{ venv_destination_path }}.tgz"
+        dest: "{{ venv_reuse_download_path }}/{{ venv_destination_path | basename }}.tgz"
       - src: "{{ venv_destination_path }}.checksum"
-        dest: "{{ venv_reuse_download_path }}/{{ venv_destination_path }}.checksum"
+        dest: "{{ venv_reuse_download_path }}/{{ venv_destination_path | basename }}.checksum"
     when:
       - _venv_package_build is mapping
       - _venv_package_build | changed

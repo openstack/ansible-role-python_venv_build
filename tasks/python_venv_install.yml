@@ -15,7 +15,7 @@
 
 - name: Copy the venv checksum file to the target host
   copy:
-    src: "{{ venv_reuse_download_path }}/{{ venv_destination_path }}.checksum"
+    src: "{{ venv_reuse_download_path }}/{{ venv_destination_path | basename }}.checksum"
     dest: "{{ venv_destination_path | dirname }}"
   register: _venv_checksum_copy
     - _src_venv_present.stat.exists | bool
@@ -34,7 +34,7 @@
 
 - name: Unarchive pre-built venv
   unarchive:
-    src: "{{ venv_reuse_download_path }}/{{ venv_destination_path }}.tgz"
+    src: "{{ venv_reuse_download_path }}/{{ venv_destination_path | basename }}.tgz"
     dest: "{{ venv_destination_path }}"
     remote_src: no
     - _venv_checksum_copy is mapping

@@ -61,8 +61,15 @@ venv_pip_install_args: ""
 venv_reuse_enable: yes
 
 # The path where a built venv should be stored on the
-# deployment host.
-venv_reuse_download_path: "{{ lookup('env', 'HOME') | default('/opt', true) }}/cache"
+# deployment host. By default, ensure that the location
+# separates venvs per distribution and architecture to
+# prevent re-use of venvs between them.
+venv_reuse_download_path: "{{ lookup('env', 'HOME') | default('/opt', true) }}/cache/{{ venv_reuse_download_subfolder }}"
+
+# NOTE(hwoarang): ansible_distribution may return a string with spaces
+# such as "openSUSE Leap" so we need to replace the space with underscore
+# in order to create a more sensible repo name for the distro.
+venv_reuse_download_subfolder: "{{ (ansible_distribution | lower) | replace(' ', '_') }}-{{ ansible_distribution_version.split('.')[:2] | join('.') }}-{{ ansible_architecture | lower }}"
 
 # The owner of the venv_reuse_download_path
 venv_reuse_download_path_owner: "{{ lookup('env', 'USER') | default('root', true) }}"

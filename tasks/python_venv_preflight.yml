@@ -21,22 +21,24 @@
   when:
     - venv_destination_path is not defined
 
+- name: Ensure that venv_reuse_download_path exists on the deployment host
+  file:
+    path: "{{ venv_reuse_download_path }}"
+    state: directory
+    owner: "{{ venv_reuse_download_path_owner }}"
+  delegate_to: localhost
+  run_once: yes
+  when:
+    - venv_reuse_enable | bool
+
 - name: Check if venv tgz is present on the deployment host
   stat:
-    path: "{{ venv_reuse_download_path }}/{{ venv_destination_path }}.tgz"
+    path: "{{ venv_reuse_download_path }}/{{ venv_destination_path | basename }}.tgz"
     get_attributes: no
     get_checksum: no
     get_md5: no
     get_mime: no
   register: _src_venv_present
-  delegate_to: localhost
-  run_once: yes
-
-- name: Ensure that venv_reuse_download_path exists on the deployment host
-  file:
-    path: "{{ venv_reuse_download_path }}/{{ venv_destination_path | dirname }}"
-    state: directory
-    owner: "{{ venv_reuse_download_path_owner }}"
   delegate_to: localhost
   run_once: yes
   when:
