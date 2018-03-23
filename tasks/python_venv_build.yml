@@ -19,6 +19,7 @@
     state: "{{ distro_package_state }}"
     update_cache: "{{ (ansible_pkg_mgr in ['apt', 'zypper']) | ternary('yes', omit) }}"
     cache_valid_time: "{{ (ansible_pkg_mgr == 'apt') | ternary(distro_cache_valid_time, omit) }}"
+  when: distro_package_list | length > 0
   register: _install_distro_packages
   until: _install_distro_packages | success
   retries: 5
@@ -29,6 +30,7 @@
     name: "{{ host_pip_packages }}"
     state: latest
     extra_args: "{{ host_pip_install_args }}"
+  when: host_pip_packages | length > 0
   register: _install_host_pip_packages
   until: _install_host_pip_packages | success
   retries: 5
