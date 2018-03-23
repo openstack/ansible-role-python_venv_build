@@ -21,6 +21,17 @@
   when:
     - venv_destination_path is not defined
 
+- name: Verify that venv_reuse_enable and venv_reuse_build_only are not interfering with each other
+  fail:
+    msg: |
+      If venv_reuse_build_only is enabled, then venv_reuse_enable must also
+      be enabled.
+      The variable venv_reuse_enable is set to {{ venv_reuse_enable }}.
+      The variable venv_reuse_build_only is set to {{ venv_reuse_build_only }}.
+  when:
+    - venv_reuse_build_only | bool
+    - not venv_reuse_enable | bool
+
 - name: Ensure that venv_reuse_download_path exists on the deployment host
   file:
     path: "{{ venv_reuse_download_path }}"

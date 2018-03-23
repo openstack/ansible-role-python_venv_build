@@ -60,6 +60,10 @@ venv_pip_install_args: ""
 # re-use the venv in subsequent deployments.
 venv_reuse_enable: yes
 
+# Enable the ability to *only* do the build, so that
+# the deploy host can be pre-populated with the venvs.
+venv_reuse_build_only: no
+
 # The path where a built venv should be stored on the
 # deployment host. By default, ensure that the location
 # separates venvs per distribution and architecture to

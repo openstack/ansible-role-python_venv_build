@@ -25,8 +25,10 @@
 - include_tasks: "python_venv_install.yml"
   when:
     - venv_reuse_enable | bool
+    - not venv_reuse_build_only | bool
     - _src_venv_present.stat.exists | bool
 
 - include_tasks: "python_venv_set_facts.yml"
   when:
+    - not venv_reuse_build_only | bool
     - venv_facts_when_changed != []
