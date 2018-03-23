@@ -68,7 +68,7 @@ venv_reuse_build_only: no
 # deployment host. By default, ensure that the location
 # separates venvs per distribution and architecture to
 # prevent re-use of venvs between them.
-venv_reuse_download_path: "{{ lookup('env', 'HOME') | default('/opt', true) }}/cache/{{ venv_reuse_download_subfolder }}"
+venv_reuse_download_path: "{{ lookup('env', 'HOME') | default('/opt', true) }}/cache/venvs/{{ venv_reuse_download_subfolder }}"
 
 # NOTE(hwoarang): ansible_distribution may return a string with spaces
 # such as "openSUSE Leap" so we need to replace the space with underscore
