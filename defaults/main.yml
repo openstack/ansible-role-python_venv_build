@@ -32,6 +32,7 @@ distro_package_list: []
 # Set the package install state for packages
 # Options are 'present' and 'latest'
 distro_package_state: "latest"
+pip_package_state: "latest"
 
 # The time in seconds that the distribution package
 # cache is valid for. This is only used by the apt

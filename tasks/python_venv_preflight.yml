@@ -58,7 +58,7 @@
 - name: Ensure that virtualenv is installed on the destination host
   pip:
     name: virtualenv
-    state: latest
+    state: "{{ pip_package_state }}"
     extra_args: "{{ host_pip_install_args }}"
   register: _install_host_pip_virtualenv
   until: _install_host_pip_virtualenv | success

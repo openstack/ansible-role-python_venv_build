@@ -28,7 +28,7 @@
 - name: Install pip packages on the host for venv build
   pip:
     name: "{{ host_pip_packages }}"
-    state: latest
+    state: "{{ pip_package_state }}"
     extra_args: "{{ host_pip_install_args }}"
   when: host_pip_packages | length > 0
   register: _install_host_pip_packages
@@ -51,7 +51,7 @@
 - name: Build venv
   pip:
     name: "{{ venv_pip_packages }}"
-    state: latest
+    state: "{{ pip_package_state }}"
     virtualenv: "{{ venv_destination_path }}"
     virtualenv_site_packages: "no"
     extra_args: "{{ venv_pip_install_args }}"
@@ -78,7 +78,7 @@
   # here. The archive module's output is far too verbose to
   # be practical when debugging.
   - name: Package venv
-    shell: |
+    command: |
       tar czf '{{ venv_destination_path }}.tgz' -C '{{ venv_destination_path }}' .
     args:
       chdir: "{{ venv_destination_path }}"

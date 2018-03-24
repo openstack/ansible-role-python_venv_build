@@ -1,5 +1,4 @@
----
-# Copyright 2018, Rackspace US, Inc.
+# Copyright 2017, Rackspace US, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,19 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- hosts: localhost
-  connection: local
-  user: root
-  become: true
-  tasks:
-    - name: Execute role
-      include_role:
-        name: "python_venv_build"
-        private: yes
-      vars:
-        venv_pip_packages: "jinja==1.2"
-        venv_destination_path: "{{ lookup('env', 'HOME') | default('/opt', true) }}/test_venv"
-        venv_facts_when_changed:
-          - section: "test"
-            option: "test_fact"
-            value: True
+- project:
+    check:
+      jobs:
+        - openstack-ansible-linters
+        - openstack-ansible-functional-centos-7
+        - openstack-ansible-functional-opensuse-423
+        - openstack-ansible-functional-ubuntu-xenial
+    gate:
+      jobs:
+        - openstack-ansible-linters
+        - openstack-ansible-functional-centos-7
+        - openstack-ansible-functional-opensuse-423
+        - openstack-ansible-functional-ubuntu-xenial
