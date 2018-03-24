@@ -33,6 +33,7 @@
   file:
     path: "{{ venv_destination_path }}"
     state: directory
+  register: _venv_dir_create
 
 - name: Unarchive pre-built venv
   unarchive:
@@ -40,8 +41,8 @@
     dest: "{{ venv_destination_path }}"
     remote_src: no
   when:
-    - _venv_checksum_copy is mapping
-    - _venv_checksum_copy | changed
+    - (_venv_checksum_copy is mapping and _venv_checksum_copy | changed) or
+      _venv_dir_create | changed
   notify:
     - venv changed
 
