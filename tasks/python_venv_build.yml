@@ -82,7 +82,6 @@
       tar czf '{{ venv_destination_path }}.tgz' -C '{{ venv_destination_path }}' .
     args:
       chdir: "{{ venv_destination_path }}"
-      executable: /bin/bash
       warn: no
     register: _venv_package_build
     when:
