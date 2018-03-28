@@ -16,7 +16,7 @@
 - name: Copy the venv checksum file to the target host
   copy:
     src: "{{ venv_reuse_download_path }}/{{ venv_destination_path | basename }}.checksum"
-    dest: "{{ venv_destination_path | dirname }}"
+    dest: "{{ venv_destination_path | dirname }}/"
   register: _venv_checksum_copy
   when:
     - _src_venv_present.stat.exists | bool
