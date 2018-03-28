@@ -1,0 +1,138 @@
+---
+# Copyright 2018, Rackspace US, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Clean up from previous tests
+  hosts: "{{ target_host_group_name }}:localhost"
+  become: yes
+  any_errors_fatal: yes
+  tasks:
+    - name: Clean up files/folders from previous tests
+      file:
+        path: "{{ item }}"
+        state: absent
+      with_items:
+        - "{{ lookup('env', 'HOME') | default('/opt', true) }}/venvs"
+        - "{{ lookup('env', 'HOME') | default('/opt', true) }}/cache"
+
+    - name: Clean up facts from previous tests
+      ini_file:
+        path: "/etc/ansible/facts.d/openstack_ansible.fact"
+        section: "{{ target_host_group_name }}"
+        state: absent
+
+    - name: Refresh the inventory to clear the added groups
+      meta: refresh_inventory
+
+- name: Execute role test and verify target host content
+  hosts: "{{ target_host_group_name }}"
+  become: yes
+  any_errors_fatal: yes
+  serial: "{{ target_serial }}"
+  vars:
+    base_directory: "{{ lookup('env', 'HOME') | default('/opt', true) }}"
+  tasks:
+
+    - name: Execute role
+      include_role:
+        name: "python_venv_build"
+        private: yes
+      vars:
+        venv_pip_packages:
+          - "Jinja2==2.10"
+        venv_destination_path: "{{ base_directory }}/venvs/{{ target_host_group_name }}"
+        venv_facts_when_changed:
+          - section: "{{ target_host_group_name }}"
+            option: "test"
+            value: True
+
+    - name: refresh local facts
+      setup:
+        filter: ansible_local
+        gather_subset: "!all"
+
+    - name: Show the ansible_local facts
+      debug:
+        var: ansible_local
+
+    - name: Verify that the facts were set
+      assert:
+        that:
+          - ansible_local['openstack_ansible'][target_host_group_name]['test'] | bool
+
+    - name: Find files/folders on targets
+      find:
+        file_type: directory
+        get_checksum: no
+        recurse: no
+        paths:
+          - "{{ base_directory }}/venvs"
+      register: _target_folders
+
+    - name: Compile the folder list from the targets
+      set_fact:
+        _target_folder_list: >-
+          {%- set folder_list = [] %}
+          {%- for item in _target_folders['files'] %}
+          {%-   set _ = folder_list.append(item['path']) %}
+          {%- endfor %}
+          {{ folder_list }}
+
+    - name: Show the files/folder from the targets
+      debug:
+        var: _target_folder_list
+
+    - name: Verify the folder list from the targets
+      assert:
+        that:
+          - "{{ base_directory ~ '/venvs/' ~ target_host_group_name in _target_folder_list }}"
+
+- name: Verify deploy host content
+  hosts: localhost
+  connection: local
+  become: yes
+  any_errors_fatal: yes
+  vars:
+    base_directory: "{{ lookup('env', 'HOME') | default('/opt', true) }}"
+    sub_directory: "{{ (ansible_distribution | lower) | replace(' ', '_') }}-{{ ansible_distribution_version.split('.')[:2] | join('.') }}-{{ ansible_architecture | lower }}"
+    package_file_path: "{{ base_directory }}/cache/venvs/{{ sub_directory }}/{{ target_host_group_name }}"
+  tasks:
+
+    - name: Find files/folders on deploy host
+      find:
+        file_type: any
+        get_checksum: no
+        recurse: yes
+        paths:
+          - "{{ base_directory }}/cache"
+      register: _localhost_folders
+
+    - name: Compile the folder list from the deploy host
+      set_fact:
+        _localhost_folder_list: >-
+          {%- set folder_list = [] %}
+          {%- for item in _localhost_folders['files'] %}
+          {%-   set _ = folder_list.append(item['path']) %}
+          {%- endfor %}
+          {{ folder_list }}
+
+    - name: Show the files/folders from the deploy host
+      debug:
+        var: _localhost_folder_list
+
+    - name: Verify the folder list from the deploy host
+      assert:
+        that:
+          - "{{ package_file_path ~ '.tgz' in _localhost_folder_list }}"
+          - "{{ package_file_path ~ '.checksum' in _localhost_folder_list }}"

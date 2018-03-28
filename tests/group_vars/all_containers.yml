@@ -13,17 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- name: Prepare the host/containers
-  include: common/test-setup-host.yml
+container_name: "{{ inventory_hostname }}"
+container_networks:
+  management_address:
+    address: "{{ ansible_host }}"
+    bridge: "br-mgmt"
+    interface: "eth1"
+    netmask: "255.255.252.0"
+    type: "veth"
+physical_host: localhost
+properties:
+  service_name: "{{ inventory_hostname }}"
 
-- name: Verify that the role works with a serial playbook
-  include: test-functional.yml
-  vars:
-    target_host_group_name: test1
-    target_serial: 1
-
-- name: Verify that the role works with a parallel playbook
-  include: test-functional.yml
-  vars:
-    target_host_group_name: test2
-    target_serial: "100%"
+# NOTE(cloudnull): The lxc-openstack AA profile for is used to ensure general
+#                  container functionality typical to the integrated build.
+lxc_container_config_list:
+  - "lxc.aa_profile=lxc-openstack"

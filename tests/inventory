@@ -1,2 +1,20 @@
+[all]
 localhost
+container1
+container2
+container3
+container4
 
+[all_containers]
+container1
+container2
+container3
+container4
+
+[test1]
+container1
+container2
+
+[test2]
+container3
+container4

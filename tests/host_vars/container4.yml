@@ -13,17 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- name: Prepare the host/containers
-  include: common/test-setup-host.yml
-
-- name: Verify that the role works with a serial playbook
-  include: test-functional.yml
-  vars:
-    target_host_group_name: test1
-    target_serial: 1
-
-- name: Verify that the role works with a parallel playbook
-  include: test-functional.yml
-  vars:
-    target_host_group_name: test2
-    target_serial: "100%"
+ansible_host: 10.1.0.5
+ansible_become: True
+ansible_user: root
