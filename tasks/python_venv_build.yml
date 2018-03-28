@@ -36,10 +36,41 @@
   retries: 5
   delay: 2
 
-- name: Create venv directory on the target host
+- name: Create wheel/venv directories on the target host
   file:
-    path: "{{ venv_destination_path }}"
+    path: "{{ item }}"
     state: directory
+  with_items:
+    - "{{ venv_destination_path }}"
+    - "{{ venv_wheel_destination_path }}"
+
+- name: Build and synchronize wheels when venv_reuse_build_wheels is enabled
+  when: venv_reuse_build_wheels | bool
+  block:
+
+  - name: Copy any existing wheels to the target host for re-use
+    synchronize:
+      src: "{{ venv_reuse_download_wheel_path }}/"
+      dest: "{{ venv_wheel_destination_path }}"
+      owner: no
+      group: no
+
+  - name: Build wheels for the packages to be installed into the venv
+    command: >-
+      pip wheel
+      --wheel-dir {{ venv_wheel_destination_path }}/
+      --find-links {{ venv_wheel_destination_path }}/
+      --log /var/log/python_wheel_build.log
+      {{ venv_pip_install_args }}
+      {{ venv_pip_packages | join(' ') }}
+
+  - name: Copy any new wheels from the target host to the deploy host for re-use
+    synchronize:
+      mode: pull
+      src: "{{ venv_wheel_destination_path }}/"
+      dest: "{{ venv_reuse_download_wheel_path }}"
+      owner: no
+      group: no
 
 #TODO(odyssey4me):
 # Split the venv build into multiple parts:
@@ -54,7 +85,10 @@
     state: "{{ pip_package_state }}"
     virtualenv: "{{ venv_destination_path }}"
     virtualenv_site_packages: "no"
-    extra_args: "{{ venv_pip_install_args }}"
+    extra_args: >-
+      --find-links {{ venv_wheel_destination_path }}/
+      --log /var/log/python_venv_build.log
+      {{ venv_pip_install_args }}
   register: _install_venv_pip_packages
   until: _install_venv_pip_packages | success
   retries: 5
@@ -104,9 +138,9 @@
       flat: yes
     with_items:
       - src: "{{ venv_destination_path }}.tgz"
-        dest: "{{ venv_reuse_download_path }}/{{ venv_destination_path | basename }}.tgz"
+        dest: "{{ venv_reuse_download_venv_path }}/{{ venv_destination_path | basename }}.tgz"
       - src: "{{ venv_destination_path }}.checksum"
-        dest: "{{ venv_reuse_download_path }}/{{ venv_destination_path | basename }}.checksum"
+        dest: "{{ venv_reuse_download_venv_path }}/{{ venv_destination_path | basename }}.checksum"
     when:
       - _venv_package_build is mapping
       - _venv_package_build | changed

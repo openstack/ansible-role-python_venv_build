@@ -20,11 +20,15 @@
   tasks:
     - name: Clean up files/folders from previous tests
       file:
-        path: "{{ item }}"
+        path: "{{ item.path }}"
         state: absent
+      when: item.condition | default(omit)
       with_items:
-        - "{{ lookup('env', 'HOME') | default('/opt', true) }}/venvs"
-        - "{{ lookup('env', 'HOME') | default('/opt', true) }}/cache"
+        - path: "{{ lookup('env', 'HOME') | default('/opt', true) }}/venvs"
+        - path: "{{ lookup('env', 'HOME') | default('/opt', true) }}/cache/venvs"
+        - path: "{{ lookup('env', 'HOME') | default('/opt', true) }}/cache/wheels"
+          condition: "{{ target_host_group_name == 'test1' }}"
+        - path: "/var/cache/pip"
 
     - name: Clean up facts from previous tests
       ini_file:
