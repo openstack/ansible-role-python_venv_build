@@ -50,6 +50,9 @@
   shell: |
     sed -si '1s/^.*python.*$/#!{{ (venv_destination_path ~ '/bin') | replace ('/','\/') }}\/python/' {{ venv_destination_path }}/bin/*
     virtualenv {{ venv_destination_path }}
+  args:
+    executable: /bin/bash
+    warn: no
   when:
     - (_venv_checksum_copy is mapping and _venv_checksum_copy | changed) or
       _venv_dir_create | changed
