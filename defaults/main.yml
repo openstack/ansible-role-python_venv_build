@@ -76,12 +76,6 @@ venv_reuse_build_wheels: yes
 # prevent re-use of venvs between them.
 venv_reuse_download_venv_path: "{{ lookup('env', 'HOME') | default('/opt', true) }}/cache/venvs/{{ venv_reuse_download_subfolder }}"
 
-# The path where built wheels should be stored on the
-# deployment host. By default, ensure that the location
-# separates wheels per distribution and architecture to
-# prevent reuse of wheels between them.
-venv_reuse_download_wheel_path: "{{ lookup('env', 'HOME') | default('/opt', true) }}/cache/wheels/{{ venv_reuse_download_subfolder }}"
-
 # NOTE(hwoarang): ansible_distribution may return a string with spaces
 # such as "openSUSE Leap" so we need to replace the space with underscore
 # in order to create a more sensible repo name for the distro.
@@ -92,7 +86,7 @@ venv_reuse_download_path_owner: "{{ lookup('env', 'USER') | default('root', true
 
 # The path where the wheels are cached on the target host
 # for speeding up the build process.
-venv_wheel_destination_path: "/var/cache/pip/wheels"
+venv_wheel_destination_path: "/var/cache/python_wheels"
 
 # The facts to set when the venv changes during a
 # build, or the installation of a venv.

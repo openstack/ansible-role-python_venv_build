@@ -32,16 +32,13 @@
     - venv_reuse_build_only | bool
     - not venv_reuse_enable | bool
 
-- name: Ensure that venv_reuse paths exists on the deployment host
+- name: Ensure that venv_reuse_download_path exists on the deployment host
   file:
-    path: "{{ item }}"
+    path: "{{ venv_reuse_download_venv_path }}"
     state: directory
     owner: "{{ venv_reuse_download_path_owner }}"
   delegate_to: localhost
   run_once: yes
-  with_items:
-    - "{{ venv_reuse_download_venv_path }}"
-    - "{{ venv_reuse_download_wheel_path }}"
   when:
     - venv_reuse_enable | bool
 

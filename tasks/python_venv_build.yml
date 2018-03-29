@@ -44,33 +44,15 @@
     - "{{ venv_destination_path }}"
     - "{{ venv_wheel_destination_path }}"
 
-- name: Build and synchronize wheels when venv_reuse_build_wheels is enabled
+- name: Build wheels for the packages to be installed into the venv
+  command: >-
+    pip wheel
+    --wheel-dir {{ venv_wheel_destination_path }}/
+    --find-links {{ venv_wheel_destination_path }}/
+    --log /var/log/python_wheel_build.log
+    {{ venv_pip_install_args }}
+    {{ venv_pip_packages | join(' ') }}
   when: venv_reuse_build_wheels | bool
-  block:
-
-  - name: Copy any existing wheels to the target host for re-use
-    synchronize:
-      src: "{{ venv_reuse_download_wheel_path }}/"
-      dest: "{{ venv_wheel_destination_path }}"
-      owner: no
-      group: no
-
-  - name: Build wheels for the packages to be installed into the venv
-    command: >-
-      pip wheel
-      --wheel-dir {{ venv_wheel_destination_path }}/
-      --find-links {{ venv_wheel_destination_path }}/
-      --log /var/log/python_wheel_build.log
-      {{ venv_pip_install_args }}
-      {{ venv_pip_packages | join(' ') }}
-
-  - name: Copy any new wheels from the target host to the deploy host for re-use
-    synchronize:
-      mode: pull
-      src: "{{ venv_wheel_destination_path }}/"
-      dest: "{{ venv_reuse_download_wheel_path }}"
-      owner: no
-      group: no
 
 #TODO(odyssey4me):
 # Split the venv build into multiple parts:
