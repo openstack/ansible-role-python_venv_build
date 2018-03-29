@@ -32,6 +32,10 @@
     - venv_reuse_build_only | bool
     - not venv_reuse_enable | bool
 
+- name: Check whether the venv_reuse_download_venv_path is a URL or a file path
+  set_fact:
+    _venv_source: "{{ (venv_reuse_download_venv_path is match('^https?://.*')) | ternary('url', 'file') }}"
+
 - name: Ensure that venv_reuse_download_path exists on the deployment host
   file:
     path: "{{ venv_reuse_download_venv_path }}"
@@ -40,6 +44,7 @@
   delegate_to: localhost
   run_once: yes
   when:
+    - _venv_source == 'file'
     - venv_reuse_enable | bool
 
 - name: Check if venv tgz is present on the deployment host
@@ -53,6 +58,7 @@
   delegate_to: localhost
   run_once: yes
   when:
+    - _venv_source == 'file'
     - venv_reuse_enable | bool
 
 - name: Ensure that virtualenv is installed on the destination host

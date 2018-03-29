@@ -79,7 +79,8 @@
     - venv changed
 
 - name: Package the venv when venv_reuse_enable is enabled
-  when: venv_reuse_enable | bool
+  when:
+    - venv_reuse_enable | bool
   block:
 
   - name: Clean up the virtualenv before packaging
@@ -124,5 +125,6 @@
       - src: "{{ venv_destination_path }}.checksum"
         dest: "{{ venv_reuse_download_venv_path }}/{{ venv_destination_path | basename }}.checksum"
     when:
+      - _venv_source == 'file'
       - _venv_package_build is mapping
       - _venv_package_build | changed

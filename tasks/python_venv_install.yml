@@ -18,14 +18,33 @@
     src: "{{ venv_reuse_download_venv_path }}/{{ venv_destination_path | basename }}.checksum"
     dest: "{{ venv_destination_path | dirname }}/"
   register: _venv_checksum_copy
+  when:
+    - _venv_source == 'file'
+
+- name: Retrieve checksum for venv download
+  uri:
+    url: "{{ venv_reuse_download_venv_path }}/{{ venv_destination_path | basename }}.checksum"
+    dest: "{{ venv_destination_path | dirname }}/"
+    return_content: yes
+  register: _venv_checksum_download
+  when:
+    - _venv_source == 'url'
+
+- name: Attempt venv download
+  get_url:
+    url: "{{ venv_reuse_download_venv_path }}/{{ venv_destination_path | basename }}.tgz"
+    dest: "{{ venv_destination_path | dirname }}/"
+    checksum: "sha1:{{ _venv_checksum_download.content | trim }}"
+  when:
+    - _venv_source == 'url'
 
 - name: Remove existing venv on target host if it is changing
   file:
     path: "{{ venv_destination_path }}"
     state: absent
   when:
-    - _venv_checksum_copy is mapping
-    - _venv_checksum_copy | changed
+    - (_venv_checksum_copy is mapping and _venv_checksum_copy | changed) or
+      (_venv_checksum_download is mapping and _venv_checksum_download | changed)
 
 - name: Create venv directory on the target host
   file:
@@ -40,6 +59,7 @@
     remote_src: no
   when:
     - (_venv_checksum_copy is mapping and _venv_checksum_copy | changed) or
+      (_venv_checksum_download is mapping and _venv_checksum_download | changed) or
       _venv_dir_create | changed
   notify:
     - venv changed
@@ -53,6 +73,7 @@
     warn: no
   when:
     - (_venv_checksum_copy is mapping and _venv_checksum_copy | changed) or
+      (_venv_checksum_download is mapping and _venv_checksum_download | changed) or
       _venv_dir_create | changed
   tags:
     - skip_ansible_lint
