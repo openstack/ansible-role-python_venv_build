@@ -14,7 +14,7 @@
 # limitations under the License.
 
 - name: Clean up from previous tests
-  hosts: "{{ target_host_group_name }}:localhost"
+  hosts: "{{ build_host }}:{{ install_hosts }}"
   become: yes
   any_errors_fatal: yes
   tasks:
@@ -22,42 +22,87 @@
       file:
         path: "{{ item.path }}"
         state: absent
-      when: item.condition | default(omit)
       with_items:
-        - path: "{{ lookup('env', 'HOME') | default('/opt', true) }}/venvs"
-        - path: "{{ lookup('env', 'HOME') | default('/opt', true) }}/cache/venvs"
-        - path: "{{ lookup('env', 'HOME') | default('/opt', true) }}/cache/wheels"
-          condition: "{{ target_host_group_name == 'test1' }}"
-        - path: "/var/cache/python_wheels"
+        - path: "{{ lookup('env', 'HOME') }}/archive"
+        - path: "{{ lookup('env', 'HOME') }}/venvs"
 
     - name: Clean up facts from previous tests
       ini_file:
         path: "/etc/ansible/facts.d/openstack_ansible.fact"
-        section: "{{ target_host_group_name }}"
+        section: "{{ item }}"
         state: absent
+      with_items: "{{ build_host.split(':') + install_hosts.split(':') }}"
 
     - name: Refresh the inventory to clear the added groups
       meta: refresh_inventory
 
-- name: Execute role test and verify target host content
-  hosts: "{{ target_host_group_name }}"
+    - name: Set venv_build_archive_path and venv_install_source_path
+      set_fact:
+        venv_build_archive_path: >-
+          {%- if build_host == "container1" %}
+          {%-   if ansible_distribution == "Ubuntu" %}
+          {%-     set _path = "/var/www/html" %}
+          {%-   elif ansible_distribution == "CentOS" %}
+          {%-     set _path = "/usr/share/nginx/html" %}
+          {%-   else %}
+          {%-     set _path = "/srv/www/htdocs" %}
+          {%-   endif %}
+          {%- else -%}
+          {%-   set _path = lookup('env', 'HOME') ~ "/archive/venvs" -%}
+          {%- endif -%}
+          {{- _path }}
+        venv_install_source_path: >-
+          {%- if build_host == "container1" -%}
+          http://{{ hostvars['container1'].ansible_default_ipv4.address }}
+          {%- else -%}
+          {{- lookup('env', 'HOME') }}/archive/venvs
+          {%- endif -%}
+
+    - name: Install distro packages
+      package:
+        name: "nginx"
+        update_cache: "{{ (ansible_pkg_mgr in ['apt', 'zypper']) | ternary('yes', omit) }}"
+      register: install
+      until: install | success
+      retries: 5
+      delay: 2
+      when:
+        - inventory_hostname == 'container1'
+
+    - name: Enable and start nginx
+      service:
+        name: nginx
+        enabled: yes
+        daemon_reload: yes
+        state: restarted
+      when:
+        - inventory_hostname == 'container1'
+
+- name: Execute build
+  hosts: "{{ build_host }}"
   become: yes
   any_errors_fatal: yes
-  serial: "{{ target_serial }}"
-  vars:
-    base_directory: "{{ lookup('env', 'HOME') | default('/opt', true) }}"
   tasks:
-
-    - name: Execute role
+    - name: Execute venv build
       include_role:
         name: "python_venv_build"
         private: yes
       vars:
-        venv_pip_packages:
-          - "Jinja2==2.10"
-        venv_destination_path: "{{ base_directory }}/venvs/{{ target_host_group_name }}"
+        venv_build_only: yes
+
+- name: Execute install
+  hosts: "{{ install_hosts }}"
+  become: yes
+  any_errors_fatal: yes
+  tasks:
+
+    - name: Execute venv install
+      include_role:
+        name: "python_venv_build"
+        private: yes
+      vars:
         venv_facts_when_changed:
-          - section: "{{ target_host_group_name }}"
+          - section: "{{ inventory_hostname }}"
             option: "test"
             value: True
 
@@ -73,7 +118,7 @@
     - name: Verify that the facts were set
       assert:
         that:
-          - ansible_local['openstack_ansible'][target_host_group_name]['test'] | bool
+          - ansible_local['openstack_ansible'][inventory_hostname]['test'] | bool
 
     - name: Find files/folders on targets
       find:
@@ -81,17 +126,12 @@
         get_checksum: no
         recurse: no
         paths:
-          - "{{ base_directory }}/venvs"
+          - "{{ venv_install_destination_path | dirname }}"
       register: _target_folders
 
     - name: Compile the folder list from the targets
       set_fact:
-        _target_folder_list: >-
-          {%- set folder_list = [] %}
-          {%- for item in _target_folders['files'] %}
-          {%-   set _ = folder_list.append(item['path']) %}
-          {%- endfor %}
-          {{ folder_list }}
+        _target_folder_list: "{{ _target_folders['files'] | map(attribute='path') | list }}"
 
     - name: Show the files/folder from the targets
       debug:
@@ -100,43 +140,4 @@
     - name: Verify the folder list from the targets
       assert:
         that:
-          - "{{ base_directory ~ '/venvs/' ~ target_host_group_name in _target_folder_list }}"
-
-- name: Verify deploy host content
-  hosts: localhost
-  connection: local
-  become: yes
-  any_errors_fatal: yes
-  vars:
-    base_directory: "{{ lookup('env', 'HOME') | default('/opt', true) }}"
-    sub_directory: "{{ (ansible_distribution | lower) | replace(' ', '_') }}-{{ ansible_distribution_version.split('.')[:2] | join('.') }}-{{ ansible_architecture | lower }}"
-    package_file_path: "{{ base_directory }}/cache/venvs/{{ sub_directory }}/{{ target_host_group_name }}"
-  tasks:
-
-    - name: Find files/folders on deploy host
-      find:
-        file_type: any
-        get_checksum: no
-        recurse: yes
-        paths:
-          - "{{ base_directory }}/cache"
-      register: _localhost_folders
-
-    - name: Compile the folder list from the deploy host
-      set_fact:
-        _localhost_folder_list: >-
-          {%- set folder_list = [] %}
-          {%- for item in _localhost_folders['files'] %}
-          {%-   set _ = folder_list.append(item['path']) %}
-          {%- endfor %}
-          {{ folder_list }}
-
-    - name: Show the files/folders from the deploy host
-      debug:
-        var: _localhost_folder_list
-
-    - name: Verify the folder list from the deploy host
-      assert:
-        that:
-          - "{{ package_file_path ~ '.tgz' in _localhost_folder_list }}"
-          - "{{ package_file_path ~ '.checksum' in _localhost_folder_list }}"
+          - "{{ venv_install_destination_path in _target_folder_list }}"

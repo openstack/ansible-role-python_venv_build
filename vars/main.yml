@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- name: venv changed
-  meta: noop
-  when: false
+# NOTE(hwoarang): ansible_distribution may return a string with spaces
+# such as "openSUSE Leap" so we need to replace the space with underscore
+# in order to create a more sensible repo name for the distro.
+venv_distro_arch_grouping: "{{ (ansible_distribution | lower) | replace(' ', '_') }}-{{ ansible_distribution_version.split('.')[:2] | join('.') }}-{{ ansible_architecture | lower }}"

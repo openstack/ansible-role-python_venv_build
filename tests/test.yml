@@ -16,14 +16,38 @@
 - name: Prepare the host/containers
   include: common/test-setup-host.yml
 
-- name: Verify that the role works with a serial playbook
-  include: test-functional.yml
+- name: Verify building on a web server, and installing using a URL
+  import_playbook: test-functional.yml
   vars:
-    target_host_group_name: test1
-    target_serial: 1
+    build_host: container1
+    install_hosts: "container2:container3"
+    venv_pip_packages:
+      - "Jinja2==2.10"
+    venv_install_destination_path: "{{ lookup('env', 'HOME') }}/venvs/test-venv"
 
-- name: Verify that the role works with a parallel playbook
-  include: test-functional.yml
+- name: Verify building on localhost, and installing using a copy
+  import_playbook: test-functional.yml
   vars:
-    target_host_group_name: test2
-    target_serial: "100%"
+    build_host: localhost
+    install_hosts: "container1:container2:container3"
+    venv_pip_packages:
+      - "Jinja2==2.10"
+    venv_install_destination_path: "{{ lookup('env', 'HOME') }}/venvs/test-venv"
+
+- name: Verify building on a build host, and installing using a copy
+  import_playbook: test-functional.yml
+  vars:
+    build_host: container2
+    install_hosts: "container1:container3"
+    venv_pip_packages:
+      - "Jinja2==2.10"
+    venv_install_destination_path: "{{ lookup('env', 'HOME') }}/venvs/test-venv"
+
+- name: Verify setting multiple build hosts behaves correctly
+  import_playbook: test-functional.yml
+  vars:
+    build_host: "localhost:container1"
+    install_hosts: "container2:container3"
+    venv_pip_packages:
+      - "Jinja2==2.10"
+    venv_install_destination_path: "{{ lookup('env', 'HOME') }}/venvs/test-venv"
