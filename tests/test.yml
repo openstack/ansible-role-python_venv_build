@@ -14,7 +14,7 @@
 # limitations under the License.
 
 - name: Prepare the host/containers
-  include: common/test-setup-host.yml
+  import_playbook: common/test-setup-host.yml
 
 - name: Verify building on a web server, and installing using a URL
   import_playbook: test-functional.yml
