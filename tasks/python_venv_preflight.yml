@@ -13,43 +13,59 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- name: Verify that venv_destination_path has been provided
+- name: Verify that venv_install_destination_path has been provided
   fail:
     msg: |
-      The variable venv_destination_path is required and
-      has not been set
+      The variable venv_install_destination_path is required and
+      has not been set.
   when:
-    - venv_destination_path is not defined
+    - venv_install_destination_path is not defined
 
-- name: Verify that venv_reuse_enable and venv_reuse_build_only are not interfering with each other
+- name: Collect the version of virtualenv
+  shell: |
+    virtualenv --version 2>/dev/null || echo 'none'
+  args:
+    executable: /bin/bash
+  changed_when: false
+  failed_when: false
+  register: _virtualenv_version
+
+- name: Collect the version of pip
+  shell: |
+    pip --version 2>/dev/null | awk '{print $2}' || echo 'none'
+  args:
+    executable: /bin/bash
+  changed_when: false
+  failed_when: false
+  register: _pip_version
+
+- name: Fail when required virtualenv version is not present
   fail:
-    msg: |
-      If venv_reuse_build_only is enabled, then venv_reuse_enable must also
-      be enabled.
-      The variable venv_reuse_enable is set to {{ venv_reuse_enable }}.
-      The variable venv_reuse_build_only is set to {{ venv_reuse_build_only }}.
+    msg: >-
+      The required virtualenv version is not present.
+      The minimum version of 13.0.0 is required, but
+      {{ _virtualenv_version.stdout }} is installed.
   when:
-    - venv_reuse_build_only | bool
-    - not venv_reuse_enable | bool
+    - ((_virtualenv_version.stdout | trim) == 'none') or
+      ((_virtualenv_version.stdout | trim) is version_compare('13.0.0', '<'))
 
-- name: Check whether the venv_reuse_download_venv_path is a URL or a file path
+- name: Fail when required pip version is not present
+  fail:
+    msg: >-
+      The required virtualenv version is not present.
+      The minimum version of 7.1 is required, but
+      {{ _pip_version.stdout }} is installed.
+  when:
+    - ((_pip_version.stdout | trim) == 'none') or
+      ((_pip_version.stdout | trim) is version_compare('7.1', '<'))
+
+- name: Check whether the venv_install_source_path is a URL or a file path
   set_fact:
-    _venv_source: "{{ (venv_reuse_download_venv_path is match('^https?://.*')) | ternary('url', 'file') }}"
-
-- name: Ensure that venv_reuse_download_path exists on the deployment host
-  file:
-    path: "{{ venv_reuse_download_venv_path }}"
-    state: directory
-    owner: "{{ venv_reuse_download_path_owner }}"
-  delegate_to: localhost
-  run_once: yes
-  when:
-    - _venv_source == 'file'
-    - venv_reuse_enable | bool
+    _venv_source: "{{ ((venv_install_source_path | trim) is match('^https?://.*')) | ternary('url', 'file') }}"
 
 - name: Check if venv tgz is present on the deployment host
   stat:
-    path: "{{ venv_reuse_download_venv_path }}/{{ venv_destination_path | basename }}.tgz"
+    path: "{{ venv_install_source_path }}/{{ venv_install_destination_path | basename }}.tgz"
     get_attributes: no
     get_checksum: no
     get_md5: no
@@ -59,14 +75,3 @@
   run_once: yes
   when:
     - _venv_source == 'file'
-    - venv_reuse_enable | bool
-
-- name: Ensure that virtualenv is installed on the destination host
-  pip:
-    name: virtualenv
-    state: "{{ pip_package_state }}"
-    extra_args: "{{ host_pip_install_args }}"
-  register: _install_host_pip_virtualenv
-  until: _install_host_pip_virtualenv | success
-  retries: 5
-  delay: 2

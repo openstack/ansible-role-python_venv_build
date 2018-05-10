@@ -20,27 +20,28 @@
 # To ensure that only the first host in every distro/architecture
 # group does the build, and the others make use of that build,
 # without forcing the use of serialisation, we use a dynamic
-# group based on the venv_reuse_download_subfolder which combines
+# group based on the venv_distro_arch_grouping which combines
 # the distribution/architecture and is therefore unique for mixed
 # environments.
 - name: Add hosts to dynamic inventory group to ensure build/install serialization
   group_by:
-    key: "{{ venv_reuse_download_subfolder }}"
+    key: "{{ venv_distro_arch_grouping }}"
+  tags:
+    - always
 
 - include_tasks: "python_venv_build.yml"
   when:
-    - (not _src_venv_present.stat.exists | bool) or
-      (not venv_reuse_enable | bool)
-    - inventory_hostname == groups[venv_reuse_download_subfolder][0]
+    - (venv_build_only | bool) or
+      ((_venv_source == 'file') and
+       (not _src_venv_present.stat.exists | bool))
+    - inventory_hostname == groups[venv_distro_arch_grouping][0]
 
 - include_tasks: "python_venv_install.yml"
   when:
-    - venv_reuse_enable | bool
-    - not venv_reuse_build_only | bool
-    - (_src_venv_present.stat.exists | bool) or
-      inventory_hostname != groups[venv_reuse_download_subfolder][0]
+    - not venv_build_only | bool
+    - inventory_hostname != groups[venv_distro_arch_grouping][0]
 
 - include_tasks: "python_venv_set_facts.yml"
   when:
-    - not venv_reuse_build_only | bool
+    - not venv_build_only | bool
     - venv_facts_when_changed != []

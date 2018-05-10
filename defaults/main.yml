@@ -19,7 +19,7 @@
 
 # The path where venvs are extracted to
 # on the target host during an install, for example:
-# venv_destination_path: "/openstack/venvs/myvenv"
+# venv_install_destination_path: "/openstack/venvs/myvenv"
 
 #
 # Optional variables
@@ -27,70 +27,59 @@
 
 # Distribution packages which must be installed
 # on the host for the purpose of building the venv.
-distro_package_list: []
+venv_build_distro_package_list: []
+
+# Distribution packages which must be installed
+# on the host when installing the venv.
+venv_install_distro_package_list: []
 
 # Set the package install state for packages
 # Options are 'present' and 'latest'
-distro_package_state: "latest"
-pip_package_state: "latest"
+venv_distro_package_state: "latest"
+venv_pip_package_state: "latest"
 
 # The time in seconds that the distribution package
 # cache is valid for. This is only used by the apt
 # and zypper package managers.
-distro_cache_valid_time: 600
-
-# Python packages which must be installed
-# on to the host for the purpose of building
-# the venv.
-host_pip_packages: []
-
-# Arguments to pass to the installation
-# of pip packages on the host.
-host_pip_install_args: ""
+venv_distro_cache_valid_time: 600
 
 # Python packages which must be installed
 # into the venv.
 venv_pip_packages: []
 
-# Arguments to pass to the venv build
+# Arguments to pass to pip when installing into the venv
 venv_pip_install_args: ""
 
-# Enable the reuse of venvs across multiple hosts.
-# This sets the build process to copy the venv to
-# the deployment host once it's built, then to
-# re-use the venv in subsequent deployments.
-venv_reuse_enable: yes
+# The python executable to use for creating the venv
+venv_python_executable: "python2"
 
 # Enable the ability to *only* do the build, so that
-# the deploy host can be pre-populated with the venvs.
-venv_reuse_build_only: no
+# the build host can be pre-populated with the venvs.
+venv_build_only: no
+
+# Enable the packaging of venvs, so that they can
+# be used for installation.
+venv_build_package: yes
 
 # Enable the use of wheels to speed up the venv
 # build process, especially when building multiple
 # venvs.
-venv_reuse_build_wheels: yes
+venv_build_wheels: yes
 
-# The path where a built venv is stored on the By default,
-# a path on the deployment host is used which ensures that
-# the location separates venvs per distribution and architecture
-# to prevent re-use of venvs between them. If the path set
-# begins with http(s):// then the install process will
-# recognise this and deploy from a URL instead of the
-# deployment host.
-venv_reuse_download_venv_path: "{{ lookup('env', 'HOME') | default('/opt', true) }}/cache/venvs/{{ venv_reuse_download_subfolder }}"
-
-# NOTE(hwoarang): ansible_distribution may return a string with spaces
-# such as "openSUSE Leap" so we need to replace the space with underscore
-# in order to create a more sensible repo name for the distro.
-venv_reuse_download_subfolder: "{{ (ansible_distribution | lower) | replace(' ', '_') }}-{{ ansible_distribution_version.split('.')[:2] | join('.') }}-{{ ansible_architecture | lower }}"
-
-# The owner of the venv_reuse_download_venv_path if it is
-# housed on the deployment host.
-venv_reuse_download_path_owner: "{{ lookup('env', 'USER') | default('root', true) }}"
-
-# The path where the wheels are cached on the target host
+# The path where the wheels are cached on the build host
 # for speeding up the build process.
-venv_wheel_destination_path: "/var/cache/python_wheels"
+venv_build_wheel_path: "{{ lookup('env', 'HOME') }}/archive/wheels"
+
+# The path where the venvs are archived on the build host
+# to be reused for installations.
+venv_build_archive_path: "{{ lookup('env', 'HOME') }}/archive/venvs"
+
+# The path where a built venv is sourced from when
+# installing. If the path set begins with https(s)://
+# then the install process will recognise the source
+# is a web server. Otherwise the path is assumed to
+# be on the deployment host.
+venv_install_source_path: "{{ lookup('env', 'HOME') }}/archive/venvs"
 
 # The facts to set when the venv changes during a
 # build, or the installation of a venv.

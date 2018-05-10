@@ -15,44 +15,44 @@
 
 - name: Install distro packages for venv build
   package:
-    name: "{{ distro_package_list }}"
-    state: "{{ distro_package_state }}"
+    name: "{{ venv_build_distro_package_list + venv_install_distro_package_list }}"
+    state: "{{ venv_distro_package_state }}"
     update_cache: "{{ (ansible_pkg_mgr in ['apt', 'zypper']) | ternary('yes', omit) }}"
     cache_valid_time: "{{ (ansible_pkg_mgr == 'apt') | ternary(distro_cache_valid_time, omit) }}"
-  when: distro_package_list | length > 0
+  when:
+    - (venv_build_distro_package_list | length > 0) or
+      (venv_install_distro_package_list | length > 0)
   register: _install_distro_packages
   until: _install_distro_packages | success
   retries: 5
   delay: 2
 
-- name: Install pip packages on the host for venv build
-  pip:
-    name: "{{ host_pip_packages }}"
-    state: "{{ pip_package_state }}"
-    extra_args: "{{ host_pip_install_args }}"
-  when: host_pip_packages | length > 0
-  register: _install_host_pip_packages
-  until: _install_host_pip_packages | success
-  retries: 5
-  delay: 2
+- name: Ensure a fresh venv_install_destination_path if venv_build_only is enabled
+  file:
+    path: "{{ venv_install_destination_path }}"
+    state: absent
+  when:
+    - venv_build_only | bool
 
 - name: Create wheel/venv directories on the target host
   file:
     path: "{{ item }}"
     state: directory
   with_items:
-    - "{{ venv_destination_path }}"
-    - "{{ venv_wheel_destination_path }}"
+    - "{{ venv_build_archive_path }}"
+    - "{{ venv_build_wheel_path }}"
+    - "{{ venv_install_destination_path }}"
 
 - name: Build wheels for the packages to be installed into the venv
   command: >-
     pip wheel
-    --wheel-dir {{ venv_wheel_destination_path }}/
-    --find-links {{ venv_wheel_destination_path }}/
+    --wheel-dir {{ venv_build_wheel_path }}/
+    --find-links {{ venv_build_wheel_path }}/
     --log /var/log/python_wheel_build.log
     {{ venv_pip_install_args }}
     {{ venv_pip_packages | join(' ') }}
-  when: venv_reuse_build_wheels | bool
+  when:
+    - venv_build_wheels | bool
 
 #TODO(odyssey4me):
 # Split the venv build into multiple parts:
@@ -64,11 +64,12 @@
 - name: Build venv
   pip:
     name: "{{ venv_pip_packages }}"
-    state: "{{ pip_package_state }}"
-    virtualenv: "{{ venv_destination_path }}"
+    state: "{{ venv_pip_package_state }}"
+    virtualenv: "{{ venv_install_destination_path }}"
     virtualenv_site_packages: "no"
+    virtualenv_python: "{{ venv_python_executable }}"
     extra_args: >-
-      --find-links {{ venv_wheel_destination_path }}/
+      --find-links {{ venv_build_wheel_path }}/
       --log /var/log/python_venv_build.log
       {{ venv_pip_install_args }}
   register: _install_venv_pip_packages
@@ -78,53 +79,66 @@
   notify:
     - venv changed
 
-- name: Package the venv when venv_reuse_enable is enabled
+- name: Package the venv when venv_build_package is enabled
   when:
-    - venv_reuse_enable | bool
+    - venv_build_package | bool
   block:
 
-  - name: Clean up the virtualenv before packaging
-    shell: |
-      find {{ venv_destination_path }}/bin -type f -name '*.pyc' -delete
-    when:
-      - _install_venv_pip_packages is mapping
-      - _install_venv_pip_packages | changed
+    - name: Clean up the virtualenv before packaging
+      shell: |
+        find {{ venv_install_destination_path }}/bin -type f -name '*.pyc' -delete
+      when:
+        - _install_venv_pip_packages is mapping
+        - _install_venv_pip_packages | changed
 
-  # Note(odyssey4me):
-  # We purposefully use shell instead of the archive module
-  # here. The archive module's output is far too verbose to
-  # be practical when debugging.
-  - name: Package venv
-    command: |
-      tar czf '{{ venv_destination_path }}.tgz' -C '{{ venv_destination_path }}' .
-    args:
-      chdir: "{{ venv_destination_path }}"
-      warn: no
-    register: _venv_package_build
-    when:
-      - _install_venv_pip_packages is mapping
-      - _install_venv_pip_packages | changed
+    # Note(odyssey4me):
+    # We purposefully use shell instead of the archive module
+    # here. The archive module's output is far too verbose to
+    # be practical when debugging.
+    - name: Package venv
+      command: |
+        tar czf '{{ venv_build_archive_path }}/{{ venv_install_destination_path | basename }}.tgz' -C '{{ venv_install_destination_path }}' .
+      args:
+        chdir: "{{ venv_install_destination_path }}"
+        warn: no
+      register: _venv_package_build
+      when:
+        - _install_venv_pip_packages is mapping
+        - _install_venv_pip_packages | changed
 
-  - name: Prepare checksum for packaged venv
-    shell: |
-      sha1sum '{{ venv_destination_path }}.tgz' | awk '{print $1}' > '{{ venv_destination_path }}.checksum'
-    args:
-      executable: /bin/bash
-    when:
-      - _venv_package_build is mapping
-      - _venv_package_build | changed
+    - name: Prepare checksum for packaged venv
+      shell: |
+        sha1sum '{{ venv_build_archive_path }}/{{ venv_install_destination_path | basename }}.tgz' | awk '{print $1}' > '{{ venv_build_archive_path }}/{{ venv_install_destination_path | basename }}.checksum'
+      args:
+        executable: /bin/bash
+      when:
+        - _venv_package_build is mapping
+        - _venv_package_build | changed
 
-  - name: Copy the packaged venv and checksum file to the deployment host
-    fetch:
-      src: "{{ item.src }}"
-      dest: "{{ item.dest }}"
-      flat: yes
-    with_items:
-      - src: "{{ venv_destination_path }}.tgz"
-        dest: "{{ venv_reuse_download_venv_path }}/{{ venv_destination_path | basename }}.tgz"
-      - src: "{{ venv_destination_path }}.checksum"
-        dest: "{{ venv_reuse_download_venv_path }}/{{ venv_destination_path | basename }}.checksum"
-    when:
-      - _venv_source == 'file'
-      - _venv_package_build is mapping
-      - _venv_package_build | changed
+    - name: Ensure that venv_install_source_path exists on the deployment host
+      file:
+        path: "{{ venv_install_source_path }}"
+        state: directory
+        owner: "{{ lookup('env', 'USER') }}"
+        recurse: yes
+      delegate_to: localhost
+      run_once: yes
+      when:
+        - _venv_source == 'file'
+        - inventory_hostname != 'localhost'
+
+    - name: Copy the packaged venv and checksum file to the deployment host
+      fetch:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        flat: yes
+      with_items:
+        - src: "{{ venv_build_archive_path }}/{{ venv_install_destination_path | basename }}.tgz"
+          dest: "{{ venv_install_source_path }}/{{ venv_install_destination_path | basename }}.tgz"
+        - src: "{{ venv_build_archive_path }}/{{ venv_install_destination_path | basename }}.checksum"
+          dest: "{{ venv_install_source_path }}/{{ venv_install_destination_path | basename }}.checksum"
+      when:
+        - _venv_source == 'file'
+        - _venv_package_build is mapping
+        - _venv_package_build | changed
+        - inventory_hostname != 'localhost'
