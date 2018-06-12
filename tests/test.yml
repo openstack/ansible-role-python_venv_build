@@ -138,6 +138,8 @@
   remote_user: root
   any_errors_fatal: yes
   vars:
+    venv_default_pip_packages:
+      - "elasticsearch>=6.0.0,<7.0.0"
     venv_pip_packages:
       - "Jinja2==2.10"
     venv_install_destination_path: "/openstack/venvs/test-venv"
