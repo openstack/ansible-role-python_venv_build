@@ -70,7 +70,7 @@
 
 - name: Install python packages into the venv
   pip:
-    name: "{{ venv_pip_packages }}"
+    name: "{{ venv_default_pip_packages + venv_pip_packages }}"
     state: "{{ venv_pip_package_state }}"
     virtualenv: "{{ venv_install_destination_path }}"
     extra_args: >-

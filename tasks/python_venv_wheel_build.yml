@@ -82,7 +82,7 @@
         --find-links {{ venv_build_host_wheel_path }}/
         --log /var/log/python_wheel_build.log
         {{ venv_pip_install_args }}
-        {{ venv_pip_packages | join(' ') }}
+        {{ (venv_default_pip_packages + venv_pip_packages) | join(' ') }}
       register: _build_python_wheels
       until: _build_python_wheels is success
       retries: 5

@@ -43,6 +43,10 @@ venv_pip_package_state: "latest"
 # package manager.
 venv_distro_cache_valid_time: 600
 
+# Default python packages which will be installed
+# into every venv.
+venv_default_pip_packages: []
+
 # Python packages which must be installed
 # into the venv.
 venv_pip_packages: []
