@@ -58,25 +58,52 @@
           {{- lookup('env', 'HOME') }}/archive/venvs
           {%- endif -%}
 
-    - name: Install distro packages
-      package:
-        name: "nginx"
-        update_cache: "{{ (ansible_pkg_mgr in ['apt', 'zypper']) | ternary('yes', omit) }}"
-      register: install
-      until: install | success
-      retries: 5
-      delay: 2
+    - name: Setup web server for url-based venv install
       when:
         - inventory_hostname == 'container1'
+      block:
+        - name: Install EPEL gpg keys
+          rpm_key:
+            key: "http://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7"
+            state: present
+          when:
+            - ansible_pkg_mgr in ['yum', 'dnf']
+          register: _add_yum_keys
+          until: _add_yum_keys | success
+          retries: 5
+          delay: 2
 
-    - name: Enable and start nginx
-      service:
-        name: nginx
-        enabled: yes
-        daemon_reload: yes
-        state: restarted
-      when:
-        - inventory_hostname == 'container1'
+        - name: Install the EPEL repository
+          yum_repository:
+            name: epel-nginx
+            baseurl: "{{ (centos_epel_mirror | default ('http://download.fedoraproject.org/pub/epel')) ~ '/' ~ ansible_distribution_major_version ~ '/' ~ ansible_architecture }}"
+            description: 'Extra Packages for Enterprise Linux 7 - $basearch'
+            gpgcheck: yes
+            enabled: yes
+            state: present
+            includepkgs: 'nginx*'
+          when:
+            - ansible_pkg_mgr in ['yum', 'dnf']
+          register: install_epel_repo
+          until: install_epel_repo | success
+          retries: 5
+          delay: 2
+
+        - name: Install distro packages
+          package:
+            name: "nginx"
+            update_cache: "{{ (ansible_pkg_mgr in ['apt', 'zypper']) | ternary('yes', omit) }}"
+          register: install
+          until: install | success
+          retries: 5
+          delay: 2
+
+        - name: Enable and start nginx
+          service:
+            name: nginx
+            enabled: yes
+            daemon_reload: yes
+            state: restarted
 
 - name: Execute build
   hosts: "{{ build_host }}"
