@@ -36,7 +36,7 @@ Documentation for the project can be found at:
   https://docs.openstack.org/openstack-ansible-python_venv_build/latest/
 
 The project home is at:
-  http://launchpad.net/openstack-ansible
+  https://launchpad.net/openstack-ansible
 
 Release notes for the project can be found at:
   https://docs.openstack.org/releasenotes/ansible-role-python_venv_build/
