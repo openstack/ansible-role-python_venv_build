@@ -23,7 +23,7 @@
     - (venv_build_distro_package_list | length > 0) or
       (venv_install_distro_package_list | length > 0)
   register: _install_distro_packages
-  until: _install_distro_packages | success
+  until: _install_distro_packages is success
   retries: 5
   delay: 2
 
@@ -73,7 +73,7 @@
       --log /var/log/python_venv_build.log
       {{ venv_pip_install_args }}
   register: _install_venv_pip_packages
-  until: _install_venv_pip_packages | success
+  until: _install_venv_pip_packages is success
   retries: 5
   delay: 2
   notify:
@@ -89,7 +89,7 @@
         find {{ venv_install_destination_path }}/bin -type f -name '*.pyc' -delete
       when:
         - _install_venv_pip_packages is mapping
-        - _install_venv_pip_packages | changed
+        - _install_venv_pip_packages is changed
 
     # Note(odyssey4me):
     # We purposefully use shell instead of the archive module
@@ -104,7 +104,7 @@
       register: _venv_package_build
       when:
         - _install_venv_pip_packages is mapping
-        - _install_venv_pip_packages | changed
+        - _install_venv_pip_packages is changed
 
     - name: Prepare checksum for packaged venv
       shell: |
@@ -113,7 +113,7 @@
         executable: /bin/bash
       when:
         - _venv_package_build is mapping
-        - _venv_package_build | changed
+        - _venv_package_build is changed
 
     - name: Ensure that venv_install_source_path exists on the deployment host
       file:
@@ -140,5 +140,5 @@
       when:
         - _venv_source == 'file'
         - _venv_package_build is mapping
-        - _venv_package_build | changed
+        - _venv_package_build is changed
         - inventory_hostname != 'localhost'

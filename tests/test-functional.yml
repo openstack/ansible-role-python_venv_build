@@ -69,7 +69,7 @@
           when:
             - ansible_pkg_mgr in ['yum', 'dnf']
           register: _add_yum_keys
-          until: _add_yum_keys | success
+          until: _add_yum_keys  is success
           retries: 5
           delay: 2
 
@@ -85,7 +85,7 @@
           when:
             - ansible_pkg_mgr in ['yum', 'dnf']
           register: install_epel_repo
-          until: install_epel_repo | success
+          until: install_epel_repo  is success
           retries: 5
           delay: 2
 
@@ -94,7 +94,7 @@
             name: "nginx"
             update_cache: "{{ (ansible_pkg_mgr in ['apt', 'zypper']) | ternary('yes', omit) }}"
           register: install
-          until: install | success
+          until: install  is success
           retries: 5
           delay: 2
 

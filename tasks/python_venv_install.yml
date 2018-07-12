@@ -22,7 +22,7 @@
   when:
     - venv_install_distro_package_list | length > 0
   register: _install_distro_packages
-  until: _install_distro_packages | success
+  until: _install_distro_packages  is success
   retries: 5
   delay: 2
 
@@ -85,7 +85,7 @@
   when:
     - (_venv_checksum_copy is mapping and _venv_checksum_copy | changed) or
       (_venv_checksum_download is mapping and _venv_checksum_download | changed) or
-      _venv_dir_create | changed
+      _venv_dir_create  is changed
   notify:
     - venv changed
 
@@ -110,6 +110,6 @@
   when:
     - (_venv_checksum_copy is mapping and _venv_checksum_copy | changed) or
       (_venv_checksum_download is mapping and _venv_checksum_download | changed) or
-      _venv_dir_create | changed
+      _venv_dir_create  is changed
   tags:
     - skip_ansible_lint
