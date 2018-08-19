@@ -30,34 +30,20 @@
   failed_when: false
   register: _virtualenv_version
 
-- name: Collect the version of pip
-  shell: |
-    pip --version 2>/dev/null | awk '{print $2}' || echo 'none'
-  args:
-    executable: /bin/bash
-  changed_when: false
-  failed_when: false
-  register: _pip_version
-
 - name: Fail when required virtualenv version is not present
   fail:
     msg: >-
       The required virtualenv version is not present.
-      The minimum version of 13.0.0 is required, but
+      The minimum version of 1.10 is required, but
       {{ _virtualenv_version.stdout }} is installed.
   when:
     - ((_virtualenv_version.stdout | trim) == 'none') or
-      ((_virtualenv_version.stdout | trim) is version_compare('13.0.0', '<'))
+      ((_virtualenv_version.stdout | trim) is version_compare('1.10', '<'))
 
-- name: Fail when required pip version is not present
-  fail:
-    msg: >-
-      The required virtualenv version is not present.
-      The minimum version of 7.1 is required, but
-      {{ _pip_version.stdout }} is installed.
-  when:
-    - ((_pip_version.stdout | trim) == 'none') or
-      ((_pip_version.stdout | trim) is version_compare('7.1', '<'))
+- name: Set the correct virtualenv parameter to prevent downloads when creating
+  set_fact:
+    _venv_create_no_download: >-
+      {{ ((_virtualenv_version.stdout | trim) is version_compare('14.0.0', '<')) | ternary('--never-download', '--no-download') }}
 
 - name: Check whether the venv_install_source_path is a URL or a file path
   set_fact:

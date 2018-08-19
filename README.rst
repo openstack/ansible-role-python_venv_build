@@ -15,9 +15,9 @@ This Ansible role prepares a python venv for use in OpenStack-Ansible.
 
 The role requires the following to be present prior to execution:
 
-* pip >= 7.1 (to support using the constraints option)
-* virtualenv >= 13.0.0 (to support using the no-pip, no-setuptools, no-wheels
-  options)
+* virtualenv >= 1.10 (to support using the never-download option)
+* pip >= 7.1 (to support using the constraints option) in the virtualenv
+  once it has been created.
 
 Use-cases
 ~~~~~~~~~
