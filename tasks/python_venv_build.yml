@@ -41,11 +41,15 @@
   with_items:
     - "{{ venv_build_archive_path }}"
     - "{{ venv_build_wheel_path }}"
-    - "{{ venv_install_destination_path }}"
+
+- name: Create the virtualenv (if it does not exist)
+  command: "virtualenv --no-site-packages {{ _venv_create_no_download }} {{ venv_install_destination_path }}"
+  args:
+    creates: "{{ venv_install_destination_path }}/bin/activate"
 
 - name: Build wheels for the packages to be installed into the venv
   command: >-
-    pip wheel
+    {{ venv_install_destination_path }}/bin/pip wheel
     --wheel-dir {{ venv_build_wheel_path }}/
     --find-links {{ venv_build_wheel_path }}/
     --log /var/log/python_wheel_build.log
@@ -53,13 +57,6 @@
     {{ venv_pip_packages | join(' ') }}
   when:
     - venv_build_wheels | bool
-
-#TODO(odyssey4me):
-# Split the venv build into multiple parts:
-# 1. Create the venv without pip, setuptools, wheel
-# 2. Use get-pip.py to install the right versions
-#    of pip, setuptools, wheel into the venv
-# 3. Install the packages into the venv
 
 - name: Build venv
   pip:
