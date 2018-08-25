@@ -47,6 +47,23 @@
   args:
     creates: "{{ venv_install_destination_path }}/bin/activate"
 
+- name: Upgrade pip/setuptools/wheel to the versions we want
+  pip:
+    name:
+      - pip
+      - setuptools
+      - wheel
+    state: "{{ venv_pip_package_state }}"
+    virtualenv: "{{ venv_install_destination_path }}"
+    extra_args: >-
+      --find-links {{ venv_build_wheel_path }}/
+      --log /var/log/python_venv_build.log
+      {{ venv_pip_install_args }}
+  register: _update_virtualenv_packages
+  until: _update_virtualenv_packages is success
+  retries: 5
+  delay: 2
+
 - name: Build wheels for the packages to be installed into the venv
   command: >-
     {{ venv_install_destination_path }}/bin/pip wheel
@@ -63,7 +80,6 @@
     name: "{{ venv_pip_packages }}"
     state: "{{ venv_pip_package_state }}"
     virtualenv: "{{ venv_install_destination_path }}"
-    virtualenv_site_packages: "no"
     virtualenv_python: "{{ venv_python_executable }}"
     extra_args: >-
       --find-links {{ venv_build_wheel_path }}/
