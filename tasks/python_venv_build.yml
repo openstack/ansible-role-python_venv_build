@@ -18,7 +18,7 @@
     name: "{{ venv_build_distro_package_list + venv_install_distro_package_list }}"
     state: "{{ venv_distro_package_state }}"
     update_cache: "{{ (ansible_pkg_mgr in ['apt', 'zypper']) | ternary('yes', omit) }}"
-    cache_valid_time: "{{ (ansible_pkg_mgr == 'apt') | ternary(distro_cache_valid_time, omit) }}"
+    cache_valid_time: "{{ (ansible_pkg_mgr == 'apt') | ternary(venv_distro_cache_valid_time, omit) }}"
   when:
     - (venv_build_distro_package_list | length > 0) or
       (venv_install_distro_package_list | length > 0)
