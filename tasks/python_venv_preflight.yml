@@ -40,10 +40,11 @@
     - ((_virtualenv_version.stdout | trim) == 'none') or
       ((_virtualenv_version.stdout | trim) is version_compare('1.10', '<'))
 
-- name: Set the correct virtualenv parameter to prevent downloads when creating
+- name: Set extra virtualenv parameters
   set_fact:
-    _venv_create_no_download: >-
+    _venv_create_extra_options: >-
       {{ ((_virtualenv_version.stdout | trim) is version_compare('14.0.0', '<')) | ternary('--never-download', '--no-download') }}
+      {{ ((_virtualenv_version.stdout | trim) is version_compare('1.7.0', '<')) | ternary('--no-site-packages', '') }}
 
 - name: Check whether the venv_install_source_path is a URL or a file path
   set_fact:
