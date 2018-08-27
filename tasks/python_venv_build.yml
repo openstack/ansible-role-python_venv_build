@@ -43,7 +43,12 @@
     - "{{ venv_build_wheel_path }}"
 
 - name: Create the virtualenv (if it does not exist)
-  command: "virtualenv --no-site-packages {{ _venv_create_no_download }} {{ venv_install_destination_path }}"
+  command: >-
+    virtualenv
+    --no-site-packages
+    {{ _venv_create_no_download }}
+    --python={{ venv_python_executable }}
+    {{ venv_install_destination_path }}
   args:
     creates: "{{ venv_install_destination_path }}/bin/activate"
 
@@ -80,7 +85,6 @@
     name: "{{ venv_pip_packages }}"
     state: "{{ venv_pip_package_state }}"
     virtualenv: "{{ venv_install_destination_path }}"
-    virtualenv_python: "{{ venv_python_executable }}"
     extra_args: >-
       --find-links {{ venv_build_wheel_path }}/
       --log /var/log/python_venv_build.log
