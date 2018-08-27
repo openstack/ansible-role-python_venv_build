@@ -40,7 +40,7 @@ venv_pip_package_state: "latest"
 
 # The time in seconds that the distribution package
 # cache is valid for. This is only used by the apt
-# and zypper package managers.
+# package manager.
 venv_distro_cache_valid_time: 600
 
 # Python packages which must be installed
