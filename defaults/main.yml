@@ -53,33 +53,31 @@ venv_pip_install_args: ""
 # The python executable to use for creating the venv
 venv_python_executable: "python2"
 
-# Enable the ability to *only* do the build, so that
-# the build host can be pre-populated with the venvs.
-venv_build_only: no
+# Enable the recreation of the venv from scratch.
+# This is useful if you think the venv may be corrupted
+# or if you have changed options which means that packages
+# should be removed from the venv.
+# Under normal circumstances, the installs will be done
+# into the existing venv over the top of any previously
+# installed packages.
+venv_rebuild: no
 
-# Enable the packaging of venvs, so that they can
-# be used for installation.
-venv_build_package: yes
+# Set the host where the wheels will be built.
+# If this host is not the same as the target host, then
+# python wheels will be built in order to speed up the
+# subsequent venv builds on this host and others. When
+# this is the same as the target host, then we will not
+# bother building wheels.
+venv_build_host: "{{ ((groups['repo_all'] is defined) and (groups['repo_all'] | length > 0)) | ternary(groups.get('repo_all')[0], inventory_hostname) }}"
 
-# Enable the use of wheels to speed up the venv
-# build process, especially when building multiple
-# venvs.
-venv_build_wheels: yes
+# The path for the wheel build venv.
+# This is the path where a venv will be created on the
+# build host for the purpose of building the wheels.
+venv_build_host_venv_path: "/openstack/venvs/wheel-builder"
 
 # The path where the wheels are cached on the build host
 # for speeding up the build process.
-venv_build_wheel_path: "{{ lookup('env', 'HOME') }}/archive/wheels"
-
-# The path where the venvs are archived on the build host
-# to be reused for installations.
-venv_build_archive_path: "{{ lookup('env', 'HOME') }}/archive/venvs"
-
-# The path where a built venv is sourced from when
-# installing. If the path set begins with https(s)://
-# then the install process will recognise the source
-# is a web server. Otherwise the path is assumed to
-# be on the deployment host.
-venv_install_source_path: "{{ lookup('env', 'HOME') }}/archive/venvs"
+venv_build_host_wheel_path: "{{ repo_pypiserver_package_path | default('/var/www/repo/pools') }}"
 
 # The facts to set when the venv changes during a
 # build, or the installation of a venv.

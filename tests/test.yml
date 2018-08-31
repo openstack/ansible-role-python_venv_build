@@ -16,38 +16,180 @@
 - name: Prepare the host/containers
   import_playbook: common/test-setup-host.yml
 
-- name: Verify building on a web server, and installing using a URL
-  import_playbook: test-functional.yml
-  vars:
-    build_host: container1
-    install_hosts: "container2:container3"
-    venv_pip_packages:
-      - "Jinja2==2.10"
-    venv_install_destination_path: "{{ lookup('env', 'HOME') }}/venvs/test-venv"
+- name: Prepare web server on localhost to serve python packages
+  hosts: localhost
+  connection: local
+  become: yes
+  any_errors_fatal: yes
+  tasks:
+    - name: Set venv_build_archive_path and venv_install_source_path
+      set_fact:
+        venv_build_host_wheel_path: >-
+          {%- if ansible_distribution == "Ubuntu" %}
+          {%-   set _path = "/var/www/html" %}
+          {%- elif ansible_distribution == "CentOS" %}
+          {%-   set _path = "/usr/share/nginx/html" %}
+          {%- else %}
+          {%-   set _path = "/srv/www/htdocs" %}
+          {%- endif %}
+          {{- _path }}
 
-- name: Verify building on localhost, and installing using a copy
-  import_playbook: test-functional.yml
-  vars:
-    build_host: localhost
-    install_hosts: "container1:container2:container3"
-    venv_pip_packages:
-      - "Jinja2==2.10"
-    venv_install_destination_path: "{{ lookup('env', 'HOME') }}/venvs/test-venv"
+    - name: Install EPEL gpg keys
+      rpm_key:
+        key: "http://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7"
+        state: present
+      when:
+        - ansible_pkg_mgr in ['yum', 'dnf']
+      register: _add_yum_keys
+      until: _add_yum_keys  is success
+      retries: 5
+      delay: 2
 
-- name: Verify building on a build host, and installing using a copy
-  import_playbook: test-functional.yml
-  vars:
-    build_host: container2
-    install_hosts: "container1:container3"
-    venv_pip_packages:
-      - "Jinja2==2.10"
-    venv_install_destination_path: "{{ lookup('env', 'HOME') }}/venvs/test-venv"
+    - name: Install the EPEL repository
+      yum_repository:
+        name: epel-nginx
+        baseurl: "{{ (centos_epel_mirror | default ('http://download.fedoraproject.org/pub/epel')) ~ '/' ~ ansible_distribution_major_version ~ '/' ~ ansible_architecture }}"
+        description: 'Extra Packages for Enterprise Linux 7 - $basearch'
+        gpgcheck: yes
+        enabled: yes
+        state: present
+        includepkgs: 'nginx*'
+      when:
+        - ansible_pkg_mgr in ['yum', 'dnf']
+      register: install_epel_repo
+      until: install_epel_repo  is success
+      retries: 5
+      delay: 2
 
-- name: Verify setting multiple build hosts behaves correctly
-  import_playbook: test-functional.yml
+    - name: Install distro packages
+      package:
+        name: "nginx"
+        update_cache: "{{ (ansible_pkg_mgr in ['apt', 'zypper']) | ternary('yes', omit) }}"
+      register: install
+      until: install  is success
+      retries: 5
+      delay: 2
+
+    - name: Enable and start nginx
+      service:
+        name: nginx
+        enabled: yes
+        daemon_reload: yes
+        state: restarted
+
+- name: Verify not using a build host
+  hosts: "container1"
+  remote_user: root
+  any_errors_fatal: yes
   vars:
-    build_host: "localhost:container1"
-    install_hosts: "container2:container3"
     venv_pip_packages:
       - "Jinja2==2.10"
-    venv_install_destination_path: "{{ lookup('env', 'HOME') }}/venvs/test-venv"
+    venv_install_destination_path: "/openstack/venvs/test-venv"
+  tasks:
+
+    - name: Execute venv install
+      include_role:
+        name: "python_venv_build"
+        private: yes
+      vars:
+        venv_facts_when_changed:
+          - section: "{{ inventory_hostname }}"
+            option: "test"
+            value: True
+
+    - name: refresh local facts
+      setup:
+        filter: ansible_local
+        gather_subset: "!all"
+
+    - name: Show the ansible_local facts
+      debug:
+        var: ansible_local
+
+    - name: Verify that the facts were set
+      assert:
+        that:
+          - ansible_local['openstack_ansible'][inventory_hostname]['test'] | bool
+
+    - name: Find files/folders on targets
+      find:
+        file_type: directory
+        get_checksum: no
+        recurse: no
+        paths:
+          - "{{ venv_install_destination_path | dirname }}"
+      register: _target_folders
+
+    - name: Compile the folder list from the targets
+      set_fact:
+        _target_folder_list: "{{ _target_folders['files'] | map(attribute='path') | list }}"
+
+    - name: Show the files/folder from the targets
+      debug:
+        var: _target_folder_list
+
+    - name: Verify the folder list from the targets
+      assert:
+        that:
+          - "{{ venv_install_destination_path in _target_folder_list }}"
+
+- name: Verify using a build host
+  hosts: "container2:container3"
+  remote_user: root
+  any_errors_fatal: yes
+  vars:
+    venv_pip_packages:
+      - "Jinja2==2.10"
+    venv_install_destination_path: "/openstack/venvs/test-venv"
+    venv_pip_install_args: >-
+      --find-links http://{{ hostvars['localhost'].ansible_default_ipv4.address }}
+      --trusted-host {{ hostvars['localhost'].ansible_default_ipv4.address }}
+    venv_build_host: localhost
+    venv_build_host_wheel_path: "{{ hostvars['localhost']['venv_build_host_wheel_path'] }}"
+  tasks:
+
+    - name: Execute venv install
+      include_role:
+        name: "python_venv_build"
+        private: yes
+      vars:
+        venv_facts_when_changed:
+          - section: "{{ inventory_hostname }}"
+            option: "test"
+            value: True
+
+    - name: refresh local facts
+      setup:
+        filter: ansible_local
+        gather_subset: "!all"
+
+    - name: Show the ansible_local facts
+      debug:
+        var: ansible_local
+
+    - name: Verify that the facts were set
+      assert:
+        that:
+          - ansible_local['openstack_ansible'][inventory_hostname]['test'] | bool
+
+    - name: Find files/folders on targets
+      find:
+        file_type: directory
+        get_checksum: no
+        recurse: no
+        paths:
+          - "{{ venv_install_destination_path | dirname }}"
+      register: _target_folders
+
+    - name: Compile the folder list from the targets
+      set_fact:
+        _target_folder_list: "{{ _target_folders['files'] | map(attribute='path') | list }}"
+
+    - name: Show the files/folder from the targets
+      debug:
+        var: _target_folder_list
+
+    - name: Verify the folder list from the targets
+      assert:
+        that:
+          - "{{ venv_install_destination_path in _target_folder_list }}"

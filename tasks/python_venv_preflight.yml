@@ -45,20 +45,3 @@
     _venv_create_extra_options: >-
       {{ ((_virtualenv_version.stdout | trim) is version_compare('14.0.0', '<')) | ternary('--never-download', '--no-download') }}
       {{ ((_virtualenv_version.stdout | trim) is version_compare('1.7.0', '<')) | ternary('--no-site-packages', '') }}
-
-- name: Check whether the venv_install_source_path is a URL or a file path
-  set_fact:
-    _venv_source: "{{ ((venv_install_source_path | trim) is match('^https?://.*')) | ternary('url', 'file') }}"
-
-- name: Check if venv tgz is present on the deployment host
-  stat:
-    path: "{{ venv_install_source_path }}/{{ venv_install_destination_path | basename }}.tgz"
-    get_attributes: no
-    get_checksum: no
-    get_md5: no
-    get_mime: no
-  register: _src_venv_present
-  delegate_to: localhost
-  run_once: yes
-  when:
-    - _venv_source == 'file'
