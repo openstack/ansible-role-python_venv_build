@@ -40,3 +40,9 @@ The project home is at:
 
 Release notes for the project can be found at:
   https://docs.openstack.org/releasenotes/ansible-role-python_venv_build/
+
+The project source code repository is located at:
+  https://git.openstack.org/cgit/openstack/ansible-role-python_venv_build
+
+The bug tracker can be found at:
+  https://bugs.launchpad.net/openstack-ansible
