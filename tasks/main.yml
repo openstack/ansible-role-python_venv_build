@@ -13,35 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- include_tasks: "python_venv_preflight.yml"
+- import_tasks: "python_venv_preflight.yml"
   tags:
     - always
 
-# To ensure that only the first host in every distro/architecture
-# group does the build, and the others make use of that build,
-# without forcing the use of serialisation, we use a dynamic
-# group based on the venv_distro_arch_grouping which combines
-# the distribution/architecture and is therefore unique for mixed
-# environments.
-- name: Add hosts to dynamic inventory group to ensure build/install serialization
-  group_by:
-    key: "{{ venv_distro_arch_grouping }}"
+- import_tasks: "python_venv_wheel_build.yml"
+  run_once: yes
   tags:
-    - always
+    - build
 
-- include_tasks: "python_venv_build.yml"
-  when:
-    - (venv_build_only | bool) or
-      ((_venv_source == 'file') and
-       (not _src_venv_present.stat.exists | bool))
-    - inventory_hostname == groups[venv_distro_arch_grouping][0]
+- import_tasks: "python_venv_install.yml"
+  tags:
+    - install
 
-- include_tasks: "python_venv_install.yml"
-  when:
-    - not venv_build_only | bool
-    - inventory_hostname != groups[venv_distro_arch_grouping][0]
-
-- include_tasks: "python_venv_set_facts.yml"
-  when:
-    - not venv_build_only | bool
-    - venv_facts_when_changed != []
+- import_tasks: "python_venv_set_facts.yml"
+  tags:
+    - install

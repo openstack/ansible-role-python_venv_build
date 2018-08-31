@@ -26,12 +26,7 @@
     value: "{{ item.value }}"
   with_items: "{{ venv_facts_when_changed }}"
   when:
-    - (_venv_checksum_copy is defined and
-       _venv_checksum_copy is mapping and
-       _venv_checksum_copy | changed) or
-      (_venv_checksum_download is defined and
-       _venv_checksum_download is mapping and
-       _venv_checksum_download | changed) or
-      (_install_venv_pip_packages is defined and
+    - venv_facts_when_changed != []
+    - (_install_venv_pip_packages is defined and
        _install_venv_pip_packages is mapping and
        _install_venv_pip_packages | changed)

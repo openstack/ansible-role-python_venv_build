@@ -13,103 +13,72 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- name: Install distro packages for venv install
+# TODO(odyssey4me):
+# Set a fact for the selective inclusion of the build package list.
+# Perhaps do this if the distro/architecture of the target host differs
+# from the build host.
+
+- name: Install distro packages for venv build
   package:
-    name: "{{ venv_install_distro_package_list }}"
+    name: "{{ venv_build_distro_package_list + venv_install_distro_package_list }}"
     state: "{{ venv_distro_package_state }}"
     update_cache: "{{ (ansible_pkg_mgr in ['apt', 'zypper']) | ternary('yes', omit) }}"
     cache_valid_time: "{{ (ansible_pkg_mgr == 'apt') | ternary(venv_distro_cache_valid_time, omit) }}"
   when:
-    - venv_install_distro_package_list | length > 0
+    - (venv_build_distro_package_list | length > 0) or
+      (venv_install_distro_package_list | length > 0)
   register: _install_distro_packages
-  until: _install_distro_packages  is success
+  until: _install_distro_packages is success
   retries: 5
   delay: 2
 
-- name: Create venv parent directories on the target host
-  file:
-    path: "{{ venv_install_destination_path | dirname }}"
-    state: directory
-
-- name: Copy the venv archive checksum
-  copy:
-    src: "{{ venv_install_source_path }}/{{ venv_install_destination_path | basename }}.checksum"
-    dest: "{{ venv_install_destination_path | dirname }}/"
-  register: _venv_checksum_copy
-  when:
-    - _venv_source == 'file'
-
-- name: Copy the venv archive
-  copy:
-    src: "{{ venv_install_source_path }}/{{ venv_install_destination_path | basename }}.tgz"
-    dest: "{{ venv_install_destination_path | dirname }}/"
-  when:
-    - _venv_source == 'file'
-
-- name: Download the venv archive checksum
-  uri:
-    url: "{{ venv_install_source_path }}/{{ venv_install_destination_path | basename }}.checksum"
-    dest: "{{ venv_install_destination_path | dirname }}/"
-    return_content: yes
-  register: _venv_checksum_download
-  when:
-    - _venv_source == 'url'
-
-- name: Download the venv archive
-  get_url:
-    url: "{{ venv_install_source_path }}/{{ venv_install_destination_path | basename }}.tgz"
-    dest: "{{ venv_install_destination_path | dirname }}/"
-    checksum: "sha1:{{ _venv_checksum_download.content | trim }}"
-  when:
-    - _venv_source == 'url'
-
-- name: Remove existing venv on target host if it is changing
+- name: Ensure a fresh venv_install_destination_path if venv_rebuild is enabled
   file:
     path: "{{ venv_install_destination_path }}"
     state: absent
   when:
-    - (_venv_checksum_copy is mapping and _venv_checksum_copy | changed) or
-      (_venv_checksum_download is mapping and _venv_checksum_download | changed)
-
-- name: Create venv directory on the target host
-  file:
-    path: "{{ venv_install_destination_path }}"
-    state: directory
-  register: _venv_dir_create
-
-- name: Unarchive pre-built venv
-  unarchive:
-    src: "{{ venv_install_destination_path }}.tgz"
-    dest: "{{ venv_install_destination_path }}"
-    remote_src: yes
-  when:
-    - (_venv_checksum_copy is mapping and _venv_checksum_copy | changed) or
-      (_venv_checksum_download is mapping and _venv_checksum_download | changed) or
-      _venv_dir_create  is changed
-  notify:
-    - venv changed
+    - venv_rebuild | bool
 
 # NOTE(odyssey4me):
-# We reinitialize the venv to ensure that the right
-# version of python is in the venv, but we do not
-# want virtualenv to also replace pip, setuptools
-# and wheel so we tell it not to.
-# We do not use --always-copy for CentOS/SuSE due
-# to https://github.com/pypa/virtualenv/issues/565
-- name: Update virtualenv python and paths
-  shell: |
-    sed -si '1s/^.*python.*$/#!{{ (venv_install_destination_path ~ '/bin') | replace ('/','\/') }}\/python/' {{ venv_install_destination_path }}/bin/*
-    virtualenv {{ venv_install_destination_path }} \
-        {{ (ansible_pkg_mgr == 'apt') | ternary('--always-copy', '') }} \
-        --no-pip \
-        --no-setuptools \
-        --no-wheel
+# Not using --always-copy for CentOS/SuSE due to
+# https://github.com/pypa/virtualenv/issues/565
+- name: Create the virtualenv (if it does not exist)
+  command: >-
+    virtualenv
+    {{ _venv_create_extra_options }}
+    --python={{ venv_python_executable }}
+    {{ (ansible_pkg_mgr == 'apt') | ternary('--always-copy', '') }}
+    {{ venv_install_destination_path }}
   args:
-    executable: /bin/bash
-    warn: no
-  when:
-    - (_venv_checksum_copy is mapping and _venv_checksum_copy | changed) or
-      (_venv_checksum_download is mapping and _venv_checksum_download | changed) or
-      _venv_dir_create  is changed
-  tags:
-    - skip_ansible_lint
+    creates: "{{ venv_install_destination_path }}/bin/activate"
+
+- name: Upgrade pip/setuptools/wheel to the versions we want
+  pip:
+    name:
+      - pip
+      - setuptools
+      - wheel
+    state: "{{ venv_pip_package_state }}"
+    virtualenv: "{{ venv_install_destination_path }}"
+    extra_args: >-
+      --log /var/log/python_venv_build.log
+      {{ venv_pip_install_args }}
+  register: _update_virtualenv_packages
+  until: _update_virtualenv_packages is success
+  retries: 5
+  delay: 2
+
+- name: Install python packages into the venv
+  pip:
+    name: "{{ venv_pip_packages }}"
+    state: "{{ venv_pip_package_state }}"
+    virtualenv: "{{ venv_install_destination_path }}"
+    extra_args: >-
+      --log /var/log/python_venv_build.log
+      {{ venv_pip_install_args }}
+  register: _install_venv_pip_packages
+  until: _install_venv_pip_packages is success
+  retries: 5
+  delay: 2
+  notify:
+    - venv changed
