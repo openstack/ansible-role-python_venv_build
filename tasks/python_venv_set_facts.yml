@@ -29,4 +29,4 @@
     - venv_facts_when_changed != []
     - (_install_venv_pip_packages is defined and
        _install_venv_pip_packages is mapping and
-       _install_venv_pip_packages | changed)
+       _install_venv_pip_packages is changed)
