@@ -77,7 +77,15 @@ venv_build_host_venv_path: "/openstack/venvs/wheel-builder"
 
 # The path where the wheels are cached on the build host
 # for speeding up the build process.
-venv_build_host_wheel_path: "{{ repo_pypiserver_package_path | default('/var/www/repo/pools') }}"
+# TODO(odyssey4me):
+# Once we remove the repo build process, this needs to point
+# to the location where wheels are served by pypiserver.
+# For now we use this to ensure that we don't rebuild the wheels
+# that were already built by the repo build process. It has also
+# been found that pypiserver hangs when it encounters duplicated
+# wheels.
+venv_build_host_wheel_path: >-
+  /var/www/repo/os-releases/{{ openstack_release | default('master') }}/{{ (ansible_distribution | lower) | replace(' ', '_') }}-{{ ansible_distribution_version.split('.')[:2] | join('.') }}-{{ ansible_architecture | lower }}
 
 # The facts to set when the venv changes during a
 # build, or the installation of a venv.
