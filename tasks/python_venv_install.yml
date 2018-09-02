@@ -74,6 +74,7 @@
     state: "{{ venv_pip_package_state }}"
     virtualenv: "{{ venv_install_destination_path }}"
     extra_args: >-
+      --pre
       --log /var/log/python_venv_build.log
       {{ venv_pip_install_args }}
   register: _install_venv_pip_packages
