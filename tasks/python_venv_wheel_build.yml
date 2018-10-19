@@ -85,5 +85,7 @@
         {{ (venv_default_pip_packages + venv_pip_packages) | join(' ') }}
       register: _build_python_wheels
       until: _build_python_wheels is success
+      changed_when: (_build_python_wheels.stdout.find('Successfully built') != -1) or
+                    (_build_python_wheels.stdout | regex_search('Saved \S*\.whl'))
       retries: 5
       delay: 2
