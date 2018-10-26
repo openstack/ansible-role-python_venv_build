@@ -26,6 +26,10 @@
 #
 
 # Distribution packages which must be installed
+# on all hosts when building python wheels.
+venv_build_base_distro_package_list: "{{ _venv_build_base_distro_package_list[ansible_os_family | lower] }}"
+
+# Distribution packages which must be installed
 # on the host for the purpose of building the
 # python wheels.
 venv_build_distro_package_list: []
