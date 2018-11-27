@@ -98,11 +98,14 @@
     virtualenv: "{{ venv_install_destination_path }}"
     extra_args: >-
       --log /var/log/python_venv_build.log
+      {{ venv_default_pip_install_args }}
       {{ venv_pip_install_args }}
   register: _update_virtualenv_packages
   until: _update_virtualenv_packages is success
   retries: 5
   delay: 2
+  notify:
+    - venv changed
 
 - name: Install python packages into the venv
   pip:
@@ -113,6 +116,7 @@
       --constraint {{ venv_install_destination_path }}/constraints.txt
       --pre
       --log /var/log/python_venv_build.log
+      {{ venv_default_pip_install_args }}
       {{ venv_pip_install_args }}
   when: (_requirement_file is changed) or (_constraint_file is changed)
   register: _install_venv_pip_packages
