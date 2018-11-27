@@ -56,6 +56,13 @@ venv_default_pip_packages: []
 # into the venv.
 venv_pip_packages: []
 
+# A list of constraints to be applied when building
+# or installing python packages.
+venv_build_constraints: []
+
+# Arguments to pass to pip when building the wheels
+venv_pip_build_args: ""
+
 # Arguments to pass to pip when installing into the venv
 venv_pip_install_args: ""
 
@@ -92,6 +99,12 @@ venv_build_host: "{{ venv_build_targets[ansible_distribution_version][ansible_ar
 # This is the path where a venv will be created on the
 # build host for the purpose of building the wheels.
 venv_build_host_venv_path: "/openstack/venvs/wheel-builder"
+
+# The path where the requirements/constraints are stored
+# on the build host in order to ensure the build process
+# is idempotent.
+venv_build_host_requirements_path: >-
+  /var/www/repo/os-releases/{{ openstack_release | default('master') }}
 
 # The path where the wheels are cached on the build host
 # for speeding up the build process.

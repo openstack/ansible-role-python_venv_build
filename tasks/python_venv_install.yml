@@ -57,6 +57,37 @@
   args:
     creates: "{{ venv_install_destination_path }}/bin/activate"
 
+# Note(odyssey4me):
+# This requirements file is not used for anything except to determine
+# if requirements have changed. This helps reduce the execution time
+# of the role and to make the role execution idempotent. If not for
+# the conditional when installing the packages, any git constraints
+# would result in the package for that constraint always being
+# reinstalled.
+- name: Build requirements file for the venv
+  copy:
+    dest: "{{ venv_install_destination_path }}/requirements.txt"
+    content: |
+      {% for item in (venv_default_pip_packages | union(venv_pip_packages)) | sort %}
+      {{ item }}
+      {% endfor %}
+  register: _requirement_file
+
+- name: Build constraints file for the venv
+  copy:
+    dest: "{{ venv_install_destination_path }}/constraints.txt"
+    content: |
+      {% if (venv_build_host != inventory_hostname) and
+            (_constraints_file_slurp is defined) and
+            (_constraints_file_slurp.content is defined) %}
+      {{ _constraints_file_slurp.content | b64decode }}
+      {% else %}
+      {%   for item in venv_build_constraints %}
+      {{ item }}
+      {%   endfor %}
+      {% endif %}
+  register: _constraint_file
+
 - name: Upgrade pip/setuptools/wheel to the versions we want
   pip:
     name:
@@ -75,13 +106,15 @@
 
 - name: Install python packages into the venv
   pip:
-    name: "{{ venv_default_pip_packages + venv_pip_packages }}"
+    name: "{{ (venv_default_pip_packages + venv_pip_packages) | unique | sort }}"
     state: "{{ venv_pip_package_state }}"
     virtualenv: "{{ venv_install_destination_path }}"
     extra_args: >-
+      --constraint {{ venv_install_destination_path }}/constraints.txt
       --pre
       --log /var/log/python_venv_build.log
       {{ venv_pip_install_args }}
+  when: (_requirement_file is changed) or (_constraint_file is changed)
   register: _install_venv_pip_packages
   until: _install_venv_pip_packages is success
   retries: 5
