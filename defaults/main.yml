@@ -59,6 +59,15 @@ venv_pip_packages: []
 # Arguments to pass to pip when installing into the venv
 venv_pip_install_args: ""
 
+# Some python packages have C bindings which tend to be very
+# particular about the version of their underlying shared libraries.
+# To ensure things run smoothly for stable releases, we opt to
+# use the distro packages for these python packages and symlink the
+# appropriate python library files and their bindings into the venv.
+# This variable should contain the list of packages installed which
+# should be symlinked into the venv.
+venv_packages_to_symlink: []
+
 # The python executable to use for creating the venv
 venv_python_executable: "python2"
 
