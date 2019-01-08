@@ -39,6 +39,11 @@
   when:
     - venv_rebuild | bool
 
+- name: Create the venv_install_destination_path parent directory
+  file:
+    path: "{{ venv_install_destination_path | dirname }}"
+    state: directory
+
 # NOTE(odyssey4me):
 # Not using --always-copy for CentOS/SuSE due to
 # https://github.com/pypa/virtualenv/issues/565
