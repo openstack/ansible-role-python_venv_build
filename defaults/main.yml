@@ -26,7 +26,8 @@
 #
 
 # Distribution packages which must be installed
-# on the host for the purpose of building the venv.
+# on the host for the purpose of building the
+# python wheels.
 venv_build_distro_package_list: []
 
 # Distribution packages which must be installed
