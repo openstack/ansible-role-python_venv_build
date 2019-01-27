@@ -19,6 +19,8 @@ _venv_build_base_distro_package_list:
     - gcc
     - "{{ (venv_python_executable == 'python2') | ternary('pkg-config', 'python3-pkgconfig') }}"
     - "{{ (venv_python_executable == 'python2') | ternary('python-dev', 'python3-dev') }}"
+  gentoo:
+    - dev-util/cmake
   redhat:
     - autoconf
     - cmake
