@@ -31,3 +31,46 @@ _venv_build_base_distro_package_list:
     - gcc
     - gcc-c++
     - "{{ (venv_python_executable == 'python2') | ternary('python-devel', 'python3-devel') }}"
+
+# Set the available build targets for all nodes within an environment.
+# build targets are grouped based on operating system and CPU
+# architecture.
+#
+# This is the data structure used to determine the build host.
+# venv_build_targets:
+#   {
+#     ansible_distribution_version: {
+#       ansible_architecture: inventory_hostname
+#     }
+#   }
+#
+# Auto generation process:
+# * The automatic build targets will iterate over the group name
+#   "repo_all" and if any target is found it will catagorize it
+#   using the distro and cpu architecture criteria.
+# * If no group named "repo_all" is found the current inventory
+#   hostname will be used as the only available build target.
+# * If no build target is found for matching the distro and cpu
+#   criteria of the active inventory item, the generator will fall
+#   back to using the active inventory host as the build target.
+#
+# NOTE: (cloudnull): While there may be multiple inventory items
+#                    that match a single distro and CPU architecture
+#                    type, only one build target will ever be used.
+#                    To make more than one build target effective,
+#                    deployers should be using a shared file system
+#                    for the repo servers.
+venv_build_targets: |-
+  {% set targets = {
+      (ansible_distribution_version | string): {
+          (ansible_architecture | string): (inventory_hostname | string)
+      }
+    }
+  %}
+  {% for item in (groups['repo_all'] | default([inventory_hostname])) %}
+  {%   set distro = hostvars[item]['ansible_distribution_version'] %}
+  {%   set arch = hostvars[item]['ansible_architecture'] %}
+  {%   set target_item = {(arch | string): (item | string)} %}
+  {%   set _ = targets.__setitem__(distro, target_item) %}
+  {% endfor %}
+  {{ targets }}
