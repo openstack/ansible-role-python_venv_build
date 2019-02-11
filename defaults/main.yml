@@ -73,7 +73,7 @@ venv_rebuild: no
 # subsequent venv builds on this host and others. When
 # this is the same as the target host, then we will not
 # bother building wheels.
-venv_build_host: "{{ ((groups['repo_all'] is defined) and (groups['repo_all'] | length > 0)) | ternary(groups.get('repo_all')[0], inventory_hostname) }}"
+venv_build_host: "{{ venv_build_targets[ansible_distribution_version][ansible_architecture] }}"
 
 # The path for the wheel build venv.
 # This is the path where a venv will be created on the
