@@ -90,7 +90,6 @@
     - name: Execute venv install
       include_role:
         name: "python_venv_build"
-        private: yes
       vars:
         venv_facts_when_changed:
           - section: "{{ inventory_hostname }}"
@@ -153,7 +152,6 @@
     - name: Execute venv install
       include_role:
         name: "python_venv_build"
-        private: yes
       vars:
         venv_facts_when_changed:
           - section: "{{ inventory_hostname }}"
