@@ -33,7 +33,7 @@ References
 ~~~~~~~~~~
 
 Documentation for the project can be found at:
-  https://docs.openstack.org/openstack-ansible-python_venv_build/latest/
+  https://docs.openstack.org/ansible-role-python_venv_build/latest/
 
 The project home is at:
   http://launchpad.net/openstack-ansible
