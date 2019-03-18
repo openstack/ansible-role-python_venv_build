@@ -17,7 +17,7 @@
   delegate_to: "{{ venv_build_host }}"
   become: "{{ venv_build_host == 'localhost' }}"
   when:
-    - venv_build_host != inventory_hostname
+    - venv_wheel_build_enable | bool
   block:
     - name: Install distro packages for wheel build
       package:

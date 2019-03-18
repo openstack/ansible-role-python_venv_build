@@ -20,7 +20,7 @@
 
 - name: Install distro packages for venv build
   package:
-    name: "{{ (venv_build_host != inventory_hostname) | ternary(venv_install_distro_package_list, (venv_build_base_distro_package_list + venv_build_distro_package_list + venv_install_distro_package_list) | unique) }}"
+    name: "{{ (venv_wheel_build_enable | bool) | ternary(venv_install_distro_package_list, (venv_build_base_distro_package_list + venv_build_distro_package_list + venv_install_distro_package_list) | unique) }}"
     state: "{{ venv_distro_package_state }}"
     update_cache: "{{ (ansible_pkg_mgr in ['apt', 'zypper']) | ternary('yes', omit) }}"
     cache_valid_time: "{{ (ansible_pkg_mgr == 'apt') | ternary(venv_distro_cache_valid_time, omit) }}"
@@ -77,7 +77,7 @@
   copy:
     dest: "{{ venv_install_destination_path }}/constraints.txt"
     content: |
-      {% if (venv_build_host != inventory_hostname) and
+      {% if (venv_wheel_build_enable | bool) and
             (_constraints_file_slurp is defined) and
             (_constraints_file_slurp.content is defined) %}
       {{ _constraints_file_slurp.content | b64decode }}

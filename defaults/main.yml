@@ -95,6 +95,12 @@ venv_python_executable: "python2"
 # installed packages.
 venv_rebuild: no
 
+# Enable/disable the build of python wheels
+# If the package concerned is built from a tarball, rather
+# than from a git source or pypi, then this may be best to
+# set to false.
+venv_wheel_build_enable: "{{ venv_build_host != inventory_hostname }}"
+
 # Set the host where the wheels will be built.
 # If this host is not the same as the target host, then
 # python wheels will be built in order to speed up the
