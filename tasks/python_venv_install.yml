@@ -20,7 +20,7 @@
 
 - name: Install distro packages for venv build
   package:
-    name: "{{ (venv_wheel_build_enable | bool) | ternary(venv_install_distro_package_list, (venv_build_base_distro_package_list + venv_build_distro_package_list + venv_install_distro_package_list) | unique) }}"
+    name: "{{ (venv_wheel_build_enable | bool) | ternary(venv_install_distro_package_list, (venv_build_base_distro_package_list | union(venv_build_distro_package_list) | union(venv_install_distro_package_list)) }}"
     state: "{{ venv_distro_package_state }}"
     update_cache: "{{ (ansible_pkg_mgr in ['apt', 'zypper']) | ternary('yes', omit) }}"
     cache_valid_time: "{{ (ansible_pkg_mgr == 'apt') | ternary(venv_distro_cache_valid_time, omit) }}"
@@ -109,7 +109,7 @@
 
 - name: Install python packages into the venv
   pip:
-    name: "{{ (venv_default_pip_packages + venv_pip_packages) | unique | sort }}"
+    name: "{{ (venv_default_pip_packages | union(venv_pip_packages)) | sort }}"
     state: "{{ venv_pip_package_state }}"
     virtualenv: "{{ venv_install_destination_path }}"
     extra_args: >-

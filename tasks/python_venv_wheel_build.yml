@@ -21,7 +21,7 @@
   block:
     - name: Install distro packages for wheel build
       package:
-        name: "{{ (venv_build_base_distro_package_list + venv_build_distro_package_list) | unique }}"
+        name: "{{ venv_build_base_distro_package_list | union(venv_build_distro_package_list) }}"
         state: "{{ venv_distro_package_state }}"
         update_cache: "{{ (ansible_pkg_mgr in ['apt', 'zypper']) | ternary('yes', omit) }}"
         cache_valid_time: "{{ (ansible_pkg_mgr == 'apt') | ternary(venv_distro_cache_valid_time, omit) }}"
