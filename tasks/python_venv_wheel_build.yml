@@ -99,6 +99,8 @@
           --find-links {{ venv_build_host_wheel_path }}/
           --log /var/log/python_venv_build.log
           {{ venv_pip_build_args }}
+      environment:
+        PIP_CONFIG_FILE: "{{ (venv_pip_upgrade_noconf | bool) | ternary('/dev/null', '') }}"
       register: _update_virtualenv_packages
       until: _update_virtualenv_packages is success
       retries: 5

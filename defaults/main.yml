@@ -56,6 +56,11 @@ venv_default_pip_packages: []
 # into the venv.
 venv_pip_packages: []
 
+# Don't use the site-wide PIP configuration file when
+# upgrading PIP (some operating systems have issued
+# with upgrades w/ extra-index-urls)
+venv_pip_upgrade_noconf: false
+
 # A list of constraints to be applied when building
 # or installing python packages.
 venv_build_constraints: []

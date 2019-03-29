@@ -100,6 +100,8 @@
       --log /var/log/python_venv_build.log
       {{ venv_default_pip_install_args }}
       {{ venv_pip_install_args }}
+  environment:
+    PIP_CONFIG_FILE: "{{ (venv_pip_upgrade_noconf | bool) | ternary('/dev/null', '') }}"
   register: _update_virtualenv_packages
   until: _update_virtualenv_packages is success
   retries: 5
