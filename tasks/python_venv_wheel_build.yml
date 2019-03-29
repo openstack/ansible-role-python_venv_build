@@ -13,6 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+- name: gather build target facts
+  setup:
+    gather_subset: '!all:hardware'
+  delegate_to: "{{ item }}"
+  delegate_facts: true
+  with_items: "{{ groups['repo_all'] | default([inventory_hostname]) }}"
+
 - name: Build the wheels on the build host
   delegate_to: "{{ venv_build_host }}"
   become: "{{ venv_build_host == 'localhost' }}"
