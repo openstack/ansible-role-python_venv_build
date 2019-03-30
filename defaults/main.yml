@@ -59,6 +59,7 @@ venv_pip_packages: []
 # Don't use the site-wide PIP configuration file when
 # upgrading PIP (some operating systems have issued
 # with upgrades w/ extra-index-urls)
+# ref: https://github.com/pypa/pip/issues/4195
 venv_pip_upgrade_noconf: false
 
 # A list of constraints to be applied when building
