@@ -19,6 +19,7 @@
 
 - import_tasks: "python_venv_wheel_build.yml"
   run_once: yes
+  when: venv_wheel_build_enable | bool
   tags:
     - build
 
