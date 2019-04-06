@@ -72,7 +72,7 @@ venv_pip_build_args: ""
 # Default arguments to pass to pip when installing into
 # the venv.
 venv_default_pip_install_args: >-
-  {%- if (groups['repo_all'] is defined) and (groups['repo_all'] | length > 0) %}
+  {%- if (groups['repo_all'] is defined) and (groups['repo_all'] | length > 0) and (venv_wheel_build_enable) %}
   --find-links {{ openstack_repo_url | default('http://localhost') }}/os-releases/{{ openstack_release | default('master') }}/{{ (ansible_distribution | lower) | replace(' ', '_') }}-{{ ansible_distribution_version.split('.')[:2] | join('.') }}-{{ ansible_architecture | lower }}
   --trusted-host {{ (openstack_repo_url | default('http://localhost')) | urlsplit('hostname') }}
   {%- endif %}
