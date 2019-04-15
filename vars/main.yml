@@ -69,7 +69,7 @@ venv_build_targets: |-
       }
     }
   %}
-  {% for item in (groups['repo_all'] | default([inventory_hostname])) %}
+  {% for item in ((groups['repo_all'] | default([inventory_hostname])) | reverse) %}
   {%   set distro = hostvars[item]['ansible_distribution_version'] %}
   {%   set arch = hostvars[item]['ansible_architecture'] %}
   {%   set target_item = {(arch | string): (item | string)} %}
