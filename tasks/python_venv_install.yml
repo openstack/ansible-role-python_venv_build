@@ -122,7 +122,8 @@
 
 - name: Install python packages into the venv
   block:
-    - pip:
+    - name: Install python packages into the venv
+      pip:
         name: "{{ (venv_default_pip_packages | union(venv_pip_packages)) | sort }}"
         state: "{{ venv_pip_package_state }}"
         virtualenv: "{{ venv_install_destination_path }}"
@@ -141,14 +142,16 @@
       notify:
         - venv changed
   rescue:
-    - file:
+    - name: Remove venv requirements/constraints files due to install failure
+      file:
         path: "{{ item }}"
         state: absent
       with_items:
         - "{{ venv_install_destination_path }}/constraints.txt"
         - "{{ venv_install_destination_path }}/global-constraints.txt"
         - "{{ venv_install_destination_path }}/requirements.txt"
-    - fail:
+    - name: Show venv install failure message
+      fail:
         msg: >
           The python packages have failed to install, please check the log file
           located at /var/log/python_venv_build.log for more information.
