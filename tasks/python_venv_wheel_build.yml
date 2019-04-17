@@ -47,6 +47,7 @@
       with_items:
         - "{{ venv_build_host_wheel_path }}"
         - "{{ venv_build_host_requirements_path }}/{{ venv_install_destination_path | basename }}-requirements.txt"
+        - "{{ venv_build_host_requirements_path }}/{{ venv_install_destination_path | basename }}-global-constraints.txt"
         - "{{ venv_build_host_requirements_path }}/{{ venv_install_destination_path | basename }}-source-constraints.txt"
         - "{{ venv_build_host_requirements_path }}/{{ venv_install_destination_path | basename }}-constraints.txt"
       when:
@@ -84,6 +85,15 @@
           {% endfor %}
       register: _requirement_file
 
+    - name: Build global constraints file for the venv
+      copy:
+        dest: "{{ venv_build_host_requirements_path }}/{{ venv_install_destination_path | basename }}-global-constraints.txt"
+        content: |
+          {% for item in venv_build_global_constraints %}
+          {{ item }}
+          {% endfor %}
+      register: _global_constraint_file
+
     - name: Build constraints file for the venv
       copy:
         dest: "{{ venv_build_host_requirements_path }}/{{ venv_install_destination_path | basename }}-source-constraints.txt"
@@ -102,6 +112,7 @@
         state: "{{ venv_pip_package_state }}"
         virtualenv: "{{ venv_build_host_venv_path }}"
         extra_args: >-
+          --constraint {{ venv_build_host_requirements_path }}/{{ venv_install_destination_path | basename }}-global-constraints.txt
           --constraint {{ venv_build_host_requirements_path }}/{{ venv_install_destination_path | basename }}-source-constraints.txt
           --find-links {{ venv_build_host_wheel_path }}/
           --log /var/log/python_venv_build.log
@@ -114,7 +125,7 @@
       delay: 2
 
     - name: Build wheels and constraints file
-      when: (_requirement_file is changed) or (_constraint_file is changed)
+      when: (_requirement_file is changed) or (_global_constraint_file is changed) or (_constraint_file is changed)
       block:
         - name: Clean up temporary wheel build path
           file:
@@ -125,6 +136,7 @@
           command: >-
             {{  venv_build_host_venv_path }}/bin/pip wheel
             --requirement {{ venv_build_host_requirements_path }}/{{ venv_install_destination_path | basename }}-requirements.txt
+            --constraint {{ venv_build_host_requirements_path }}/{{ venv_install_destination_path | basename }}-global-constraints.txt
             --constraint {{ venv_build_host_requirements_path }}/{{ venv_install_destination_path | basename }}-source-constraints.txt
             --wheel-dir /tmp/{{ venv_install_destination_path | basename }}/
             --find-links {{ venv_build_host_wheel_path }}/
