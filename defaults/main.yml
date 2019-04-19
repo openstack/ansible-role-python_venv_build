@@ -66,6 +66,11 @@ venv_pip_upgrade_noconf: false
 # or installing python packages.
 venv_build_constraints: []
 
+# A list of pip constraints to be applied as global
+# constraints ahead of the list in venv_build_constraints.
+# This is useful for global pins across all venvs.
+venv_build_global_constraints: []
+
 # Arguments to pass to pip when building the wheels
 venv_pip_build_args: ""
 

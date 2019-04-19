@@ -73,6 +73,15 @@
       {% endfor %}
   register: _requirement_file
 
+- name: Build global constraints file for the venv
+  copy:
+    dest: "{{ venv_install_destination_path }}/global-constraints.txt"
+    content: |
+      {% for item in venv_build_global_constraints %}
+      {{ item }}
+      {% endfor %}
+  register: _global_constraint_file
+
 - name: Build constraints file for the venv
   copy:
     dest: "{{ venv_install_destination_path }}/constraints.txt"
@@ -97,6 +106,8 @@
     state: "{{ venv_pip_package_state }}"
     virtualenv: "{{ venv_install_destination_path }}"
     extra_args: >-
+      --constraint {{ venv_install_destination_path }}/global-constraints.txt
+      --constraint {{ venv_install_destination_path }}/constraints.txt
       --log /var/log/python_venv_build.log
       {{ venv_default_pip_install_args }}
       {{ venv_pip_install_args }}
@@ -117,12 +128,13 @@
         state: "{{ venv_pip_package_state }}"
         virtualenv: "{{ venv_install_destination_path }}"
         extra_args: >-
+          --constraint {{ venv_install_destination_path }}/global-constraints.txt
           --constraint {{ venv_install_destination_path }}/constraints.txt
           --pre
           --log /var/log/python_venv_build.log
           {{ venv_default_pip_install_args }}
           {{ venv_pip_install_args }}
-      when: (_requirement_file is changed) or (_constraint_file is changed)
+      when: (_requirement_file is changed) or (_global_constraint_file is changed) or (_constraint_file is changed)
       register: _install_venv_pip_packages
       until: _install_venv_pip_packages is success
       retries: 5
@@ -136,6 +148,7 @@
         state: absent
       with_items:
         - "{{ venv_install_destination_path }}/constraints.txt"
+        - "{{ venv_install_destination_path }}/global-constraints.txt"
         - "{{ venv_install_destination_path }}/requirements.txt"
     - name: Show venv install failure message
       fail:
