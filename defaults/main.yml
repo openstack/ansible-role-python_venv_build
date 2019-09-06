@@ -123,7 +123,7 @@ venv_build_host: "{{ venv_build_targets[ansible_distribution_version][ansible_ar
 # The path for the wheel build venv.
 # This is the path where a venv will be created on the
 # build host for the purpose of building the wheels.
-venv_build_host_venv_path: "/openstack/venvs/wheel-builder"
+venv_build_host_venv_path: "/openstack/venvs/wheel-builder-{{ venv_python_executable }}"
 
 # The path where the requirements/constraints are stored
 # on the build host in order to ensure the build process
