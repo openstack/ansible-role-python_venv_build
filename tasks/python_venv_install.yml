@@ -178,6 +178,7 @@
       shell: >-
         {{ (ansible_pkg_mgr == 'apt') | ternary('dpkg -L ' ~ (venv_packages_to_symlink | join(' ')), 'rpm -ql ' ~ (venv_packages_to_symlink | join(' ')) ) }}
         | egrep '^.*{{ venv_python_major_version }}.*/(site|dist)-packages/.*'
+        | egrep -v "__pycache__"
       args:
         warn: no
       changed_when: false
