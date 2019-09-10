@@ -38,10 +38,10 @@
       {{ _virtualenv_version.stdout }} is installed.
   when:
     - ((_virtualenv_version.stdout | trim) == 'none') or
-      ((_virtualenv_version.stdout | trim) is version_compare('1.10', '<'))
+      ((_virtualenv_version.stdout | trim) is version('1.10', '<'))
 
 - name: Set extra virtualenv parameters
   set_fact:
     _venv_create_extra_options: >-
-      {{ ((_virtualenv_version.stdout | trim) is version_compare('14.0.0', '<')) | ternary('--never-download', '--no-download') }}
-      {{ ((_virtualenv_version.stdout | trim) is version_compare('1.7.0', '<')) | ternary('--no-site-packages', '') }}
+      {{ ((_virtualenv_version.stdout | trim) is version('14.0.0', '<')) | ternary('--never-download', '--no-download') }}
+      {{ ((_virtualenv_version.stdout | trim) is version('1.7.0', '<')) | ternary('--no-site-packages', '') }}
