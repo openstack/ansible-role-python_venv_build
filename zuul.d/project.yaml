@@ -21,7 +21,7 @@
       - release-notes-jobs-python3
     check:
       jobs:
-        - tripleo-ci-centos-7-standalone-os-tempest
+        - tripleo-ci-centos-7-standalone
     gate:
       jobs:
-        - tripleo-ci-centos-7-standalone-os-tempest
+        - tripleo-ci-centos-7-standalone
