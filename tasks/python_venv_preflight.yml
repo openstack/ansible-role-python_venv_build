@@ -21,27 +21,34 @@
   when:
     - venv_install_destination_path is not defined
 
-- name: Collect the version of virtualenv
+- name: Collect the version of virtualenv from either stdout or stderr
   shell: |
-    virtualenv --version 2>/dev/null || echo 'none'
+    virtualenv --version 2>&1 || echo 'none'
   args:
     executable: /bin/bash
   changed_when: false
   failed_when: false
   register: _virtualenv_version
 
+  # _virtualenv_version may take two forms:
+  # (stdout) '15.1.0'
+  # (stderr) 'virtualenv 20.0.1 from /usr/local/lib/python2.7/dist-packages/virtualenv/__init__.pyc'
+- name: Extract just the virtualevn version number
+  set_fact:
+    _virtualenv_version_number: "{{ (_virtualenv_version.stdout.split(' ') | length == 1) | ternary(_virtualenv_version.stdout, _virtualenv_version.stdout.split(' ')[1]) }}"
+
 - name: Fail when required virtualenv version is not present
   fail:
     msg: >-
       The required virtualenv version is not present.
       The minimum version of 1.10 is required, but
-      {{ _virtualenv_version.stdout }} is installed.
+      {{ _virtualenv_version_number }} is installed.
   when:
-    - ((_virtualenv_version.stdout | trim) == 'none') or
-      ((_virtualenv_version.stdout | trim) is version('1.10', '<'))
+    - ((_virtualenv_version_number | trim) == 'none') or
+      ((_virtualenv_version_number | trim) is version('1.10', '<'))
 
 - name: Set extra virtualenv parameters
   set_fact:
     _venv_create_extra_options: >-
-      {{ ((_virtualenv_version.stdout | trim) is version('14.0.0', '<')) | ternary('--never-download', '--no-download') }}
-      {{ ((_virtualenv_version.stdout | trim) is version('1.7.0', '<')) | ternary('--no-site-packages', '') }}
+      {{ ((_virtualenv_version_number | trim) is version('14.0.0', '<')) | ternary('--never-download', '--no-download') }}
+      {{ ((_virtualenv_version_number | trim) is version('1.7.0', '<')) | ternary('--no-site-packages', '') }}
