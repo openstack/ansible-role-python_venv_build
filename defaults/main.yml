@@ -95,7 +95,7 @@ venv_pip_install_args: ""
 venv_packages_to_symlink: []
 
 # The python executable to use for creating the venv
-venv_python_executable: "python2"
+venv_python_executable: "python3"
 
 # Enable the recreation of the venv from scratch.
 # This is useful if you think the venv may be corrupted
