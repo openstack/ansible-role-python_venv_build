@@ -23,7 +23,7 @@
     dest: "/etc/ansible/facts.d/{{ venv_facts_dest }}.fact"
     section: "{{ item.section }}"
     option: "{{ item.option }}"
-    value: "{{ item.value }}"
+    value: "{{ item.value | string }}"
   with_items: "{{ venv_facts_when_changed }}"
   when:
     - venv_facts_when_changed != []
