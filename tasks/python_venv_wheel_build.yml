@@ -69,7 +69,7 @@
     - name: Create the wheel build virtualenv (if it does not exist)
       command: >-
         virtualenv
-        {{ _venv_create_extra_options }}
+        --no-download
         --python={{ venv_python_executable }}
         {{ (ansible_pkg_mgr == 'apt') | ternary('--always-copy', '') }}
         {{ venv_build_host_venv_path }}
