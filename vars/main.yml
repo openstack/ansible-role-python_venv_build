@@ -76,3 +76,5 @@ venv_build_targets: |-
   {%   set _ = targets.__setitem__(distro, target_item) %}
   {% endfor %}
   {{ targets }}
+
+_venv_pip_packages: "{{ (venv_default_pip_packages | union(venv_pip_packages)) | sort | select | list }}"

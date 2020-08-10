@@ -68,7 +68,7 @@
   copy:
     dest: "{{ venv_install_destination_path }}/requirements.txt"
     content: |
-      {% for item in (venv_default_pip_packages | union(venv_pip_packages)) | sort %}
+      {% for item in _venv_pip_packages %}
       {{ item }}
       {% endfor %}
   register: _requirement_file
@@ -124,7 +124,7 @@
   block:
     - name: Install python packages into the venv
       pip:
-        name: "{{ (venv_default_pip_packages | union(venv_pip_packages)) | sort }}"
+        name: "{{ _venv_pip_packages }}"
         state: "{{ venv_pip_package_state }}"
         virtualenv: "{{ venv_install_destination_path }}"
         extra_args: >-

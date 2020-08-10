@@ -80,7 +80,7 @@
       copy:
         dest: "{{ venv_build_host_requirements_path }}/{{ venv_install_destination_path | basename }}-requirements.txt"
         content: |
-          {% for item in (venv_default_pip_packages | union(venv_pip_packages)) | sort %}
+          {% for item in _venv_pip_packages %}
           {{ item }}
           {% endfor %}
       register: _requirement_file
