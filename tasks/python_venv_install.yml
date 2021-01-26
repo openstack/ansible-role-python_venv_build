@@ -57,6 +57,27 @@
   args:
     creates: "{{ venv_install_destination_path }}/bin/activate"
 
+# Note(jrosser)
+# If the constraints file from the wheel build has been previously collected
+# then we must remove any git+... requirements from the input packages list
+# and replace them with the package name. The slurped constraints file will
+# contain the built version in the form foo=1.2.3dev4, and the requirements
+# file must just specify 'foo'.
+- name: Create the requirements file contents
+  set_fact:
+    _venv_install_pip_packages: |
+      {% if (venv_wheel_build_enable | bool) and
+            (_constraints_file_slurp is defined) and
+            (_constraints_file_slurp.content is defined) %}
+      {% set _newlist = [] %}
+      {%    for item in _venv_pip_packages  %}
+      {% set _x = _newlist.append(item.split('egg=')[-1]) %}
+      {%    endfor %}
+      {{ _newlist }}
+      {% else %}
+      {{ _venv_pip_packages }}
+      {% endif %}
+
 # Note(odyssey4me):
 # This requirements file is not used for anything except to determine
 # if requirements have changed. This helps reduce the execution time
@@ -68,7 +89,7 @@
   copy:
     dest: "{{ venv_install_destination_path }}/requirements.txt"
     content: |
-      {% for item in _venv_pip_packages %}
+      {% for item in _venv_install_pip_packages %}
       {{ item }}
       {% endfor %}
   register: _requirement_file
@@ -124,7 +145,7 @@
   block:
     - name: Install python packages into the venv
       pip:
-        name: "{{ _venv_pip_packages }}"
+        name: "{{ _venv_install_pip_packages }}"
         state: "{{ venv_pip_package_state }}"
         virtualenv: "{{ venv_install_destination_path }}"
         extra_args: >-
