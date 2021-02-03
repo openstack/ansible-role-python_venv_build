@@ -45,7 +45,6 @@
         path: "{{ item }}"
         state: absent
       with_items:
-        - "{{ venv_build_host_wheel_path }}"
         - "{{ venv_build_host_requirements_path }}/{{ venv_install_destination_path | basename }}-requirements.txt"
         - "{{ venv_build_host_requirements_path }}/{{ venv_install_destination_path | basename }}-global-constraints.txt"
         - "{{ venv_build_host_requirements_path }}/{{ venv_install_destination_path | basename }}-source-constraints.txt"
