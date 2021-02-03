@@ -107,6 +107,11 @@ venv_python_executable: "python3"
 # installed packages.
 venv_rebuild: no
 
+# Enable the recreation of the pre-built wheels.
+# This is useful if wheels build has been interrupted or
+# previously failed because of connectivity or other issues.
+venv_wheels_rebuild: no
+
 # Enable/disable the build of python wheels
 # If the package concerned is built from a tarball, rather
 # than from a git source or pypi, then this may be best to

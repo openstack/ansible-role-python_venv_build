@@ -32,7 +32,7 @@
       retries: 5
       delay: 2
 
-    - name: Clean up paths and files if venv_rebuild is enabled
+    - name: Clean up paths and files if venv_wheels_rebuild is enabled
       file:
         path: "{{ item }}"
         state: absent
@@ -42,7 +42,7 @@
         - "{{ _venv_build_requirements_prefix }}-source-constraints.txt"
         - "{{ _venv_build_requirements_prefix }}-constraints.txt"
       when:
-        - venv_rebuild | bool
+        - venv_wheels_rebuild | bool
 
     - name: Create wheel directory on the build host
       file:
