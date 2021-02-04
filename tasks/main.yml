@@ -17,10 +17,15 @@
   tags:
     - always
 
-- import_tasks: "python_venv_wheel_build.yml"
+- include_tasks: "python_venv_wheel_build.yml"
+  args:
+    apply:
+      tags:
+        - build
+  when: venv_wheel_build_enable | bool
   run_once: yes
   tags:
-    - build
+    - always
 
 - import_tasks: "python_venv_install.yml"
   tags:

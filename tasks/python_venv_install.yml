@@ -178,37 +178,10 @@
           located at /var/log/python_venv_build.log for more information.
 
 - name: Add symlinks from distribution python packages
+  include_tasks: python_venv_install_symlink.yml
+  args:
+    apply:
+      tags:
+        - install
   when:
     - venv_packages_to_symlink | length > 0
-  block:
-    - name: Find the venv's python version
-      find:
-        paths: "{{ venv_install_destination_path }}/lib/"
-        patterns: "python*"
-        file_type: directory
-        recurse: no
-      register: _python_venv_details
-
-    - name: Set python venv details
-      set_fact:
-        venv_python_version: "{{ (_python_venv_details.files[0].path | basename) }}"
-        venv_python_major_version: "{{ (_python_venv_details.files[0].path | basename)[:-2] }}"
-        venv_python_lib_folder: "{{ _python_venv_details.files[0].path }}"
-
-    - name: Search for lib files to link
-      shell: >-
-        {{ (ansible_pkg_mgr == 'apt') | ternary('dpkg -L ' ~ (venv_packages_to_symlink | join(' ')), 'rpm -ql ' ~ (venv_packages_to_symlink | join(' ')) ) }}
-        | egrep '^.*{{ venv_python_major_version }}.*/(site|dist)-packages/.*'
-        | egrep -v "__pycache__"
-      args:
-        warn: no
-      changed_when: false
-      register: _python_files
-
-    - name: Link the python host package files into venv
-      file:
-        src: "{{ item }}"
-        dest: "{{ venv_python_lib_folder }}/site-packages/{{ item | basename }}"
-        state: link
-        force: yes
-      with_items: "{{ _python_files.stdout_lines }}"
