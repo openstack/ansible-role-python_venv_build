@@ -21,16 +21,12 @@
     recurse: no
   register: _python_venv_details
 
-- name: Set python venv details
-  set_fact:
-    venv_python_version: "{{ (_python_venv_details.files[0].path | basename) }}"
-    venv_python_major_version: "{{ (_python_venv_details.files[0].path | basename)[:-2] }}"
-    venv_python_lib_folder: "{{ _python_venv_details.files[0].path }}"
-
 - name: Search for lib files to link
+  vars:
+    _venv_python_major_version: "{{ (_python_venv_details.files[0].path | basename)[:-2] }}"
   shell: >-
     {{ (ansible_pkg_mgr == 'apt') | ternary('dpkg -L ' ~ (venv_packages_to_symlink | join(' ')), 'rpm -ql ' ~ (venv_packages_to_symlink | join(' ')) ) }}
-    | egrep '^.*{{ venv_python_major_version }}.*/(site|dist)-packages/.*'
+    | egrep '^.*{{ _venv_python_major_version }}.*/(site|dist)-packages/.*'
     | egrep -v "__pycache__"
   args:
     warn: no
@@ -38,9 +34,11 @@
   register: _python_files
 
 - name: Link the python host package files into venv
+  vars:
+    _venv_python_lib_folder: "{{ _python_venv_details.files[0].path }}"
   file:
     src: "{{ item }}"
-    dest: "{{ venv_python_lib_folder }}/site-packages/{{ item | basename }}"
+    dest: "{{ _venv_python_lib_folder }}/site-packages/{{ item | basename }}"
     state: link
     force: yes
   with_items: "{{ _python_files.stdout_lines }}"
