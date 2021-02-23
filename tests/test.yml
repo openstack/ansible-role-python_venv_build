@@ -25,9 +25,9 @@
     - name: Set venv_build_archive_path and venv_install_source_path
       set_fact:
         venv_build_host_wheel_path: >-
-          {%- if ansible_distribution == "Ubuntu" %}
+          {%- if ansible_facts['distribution'] == "Ubuntu" %}
           {%-   set _path = "/var/www/html" %}
-          {%- elif ansible_distribution == "CentOS" %}
+          {%- elif ansible_facts['distribution'] == "CentOS" %}
           {%-   set _path = "/usr/share/nginx/html" %}
           {%- else %}
           {%-   set _path = "/srv/www/htdocs" %}
@@ -39,7 +39,7 @@
         key: "http://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7"
         state: present
       when:
-        - ansible_pkg_mgr in ['yum', 'dnf']
+        - ansible_facts['pkg_mgr'] in ['yum', 'dnf']
       register: _add_yum_keys
       until: _add_yum_keys  is success
       retries: 5
@@ -48,14 +48,14 @@
     - name: Install the EPEL repository
       yum_repository:
         name: epel-nginx
-        baseurl: "{{ (centos_epel_mirror | default ('http://download.fedoraproject.org/pub/epel')) ~ '/' ~ ansible_distribution_major_version ~ ((ansible_distribution_major_version is version('8', '<')) | ternary('/', '/Everything/')) ~ ansible_architecture }}"
+        baseurl: "{{ (centos_epel_mirror | default ('http://download.fedoraproject.org/pub/epel')) ~ '/' ~ ansible_facts['distribution_major_version'] ~ ((ansible_facts['distribution_major_version'] is version('8', '<')) | ternary('/', '/Everything/')) ~ ansible_facts['architecture'] }}"
         description: 'Extra Packages for Enterprise Linux - $basearch'
         gpgcheck: yes
         enabled: yes
         state: present
         includepkgs: 'nginx*'
       when:
-        - ansible_pkg_mgr in ['yum', 'dnf']
+        - ansible_facts['pkg_mgr'] in ['yum', 'dnf']
       register: install_epel_repo
       until: install_epel_repo  is success
       retries: 5
@@ -64,7 +64,7 @@
     - name: Install distro packages
       package:
         name: "nginx"
-        update_cache: "{{ (ansible_pkg_mgr in ['apt', 'zypper']) | ternary('yes', omit) }}"
+        update_cache: "{{ (ansible_facts['pkg_mgr'] in ['apt', 'zypper']) | ternary('yes', omit) }}"
       register: install
       until: install  is success
       retries: 5
@@ -143,8 +143,8 @@
       - "Jinja2==2.10"
     venv_install_destination_path: "/openstack/venvs/test-venv"
     venv_pip_install_args: >-
-      --find-links http://{{ hostvars['localhost'].ansible_default_ipv4.address }}
-      --trusted-host {{ hostvars['localhost'].ansible_default_ipv4.address }}
+      --find-links http://{{ hostvars['localhost']['ansible_facts']['default_ipv4'].address }}
+      --trusted-host {{ hostvars['localhost']['ansible_facts']['default_ipv4'].address }}
     venv_build_host: localhost
     venv_build_host_wheel_path: "{{ hostvars['localhost']['venv_build_host_wheel_path'] }}"
   tasks:

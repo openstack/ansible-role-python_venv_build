@@ -27,7 +27,7 @@
 
 # Distribution packages which must be installed
 # on all hosts when building python wheels.
-venv_build_base_distro_package_list: "{{ _venv_build_base_distro_package_list[ansible_os_family | lower] }}"
+venv_build_base_distro_package_list: "{{ _venv_build_base_distro_package_list[ansible_facts['os_family'] | lower] }}"
 
 # Distribution packages which must be installed
 # on the host for the purpose of building the
@@ -78,7 +78,7 @@ venv_pip_build_args: ""
 # the venv.
 venv_default_pip_install_args: >-
   {%- if (groups['repo_all'] is defined) and (groups['repo_all'] | length > 0) and (venv_wheel_build_enable | bool) %}
-  --find-links {{ openstack_repo_url | default('http://localhost') }}/os-releases/{{ openstack_release | default('master') }}/{{ (ansible_distribution | lower) | replace(' ', '_') }}-{{ ansible_distribution_version.split('.')[:2] | join('.') }}-{{ ansible_architecture | lower }}
+  --find-links {{ openstack_repo_url | default('http://localhost') }}/os-releases/{{ openstack_release | default('master') }}/{{ (ansible_facts['distribution'] | lower) | replace(' ', '_') }}-{{ ansible_facts['distribution_version'].split('.')[:2] | join('.') }}-{{ ansible_facts['architecture'] | lower }}
   --trusted-host {{ (openstack_repo_url | default('http://localhost')) | urlsplit('hostname') }}
   {%- endif %}
 
@@ -118,7 +118,8 @@ venv_wheel_build_enable: "{{ venv_build_host != inventory_hostname }}"
 # subsequent venv builds on this host and others. When
 # this is the same as the target host, then we will not
 # bother building wheels.
-venv_build_host: "{{ venv_build_targets[ansible_distribution_version][ansible_architecture] }}"
+
+venv_build_host: "{{ venv_build_targets[ansible_facts['distribution_version']][ansible_facts['architecture']] }}"
 
 # The path for the wheel build venv.
 # This is the path where a venv will be created on the
@@ -141,7 +142,7 @@ venv_build_host_requirements_path: >-
 # been found that pypiserver hangs when it encounters duplicated
 # wheels.
 venv_build_host_wheel_path: >-
-  /var/www/repo/os-releases/{{ openstack_release | default('master') }}/{{ (ansible_distribution | lower) | replace(' ', '_') }}-{{ ansible_distribution_version.split('.')[:2] | join('.') }}-{{ ansible_architecture | lower }}
+  /var/www/repo/os-releases/{{ openstack_release | default('master') }}/{{ (ansible_facts['distribution'] | lower) | replace(' ', '_') }}-{{ ansible_facts['distribution_version'].split('.')[:2] | join('.') }}-{{ ansible_facts['architecture'] | lower }}
 
 # The facts to set when the venv changes during a
 # build, or the installation of a venv.

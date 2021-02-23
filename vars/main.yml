@@ -64,14 +64,14 @@ _venv_build_base_distro_package_list:
 #                    for the repo servers.
 venv_build_targets: |-
   {% set targets = {
-      (ansible_distribution_version | string): {
-          (ansible_architecture | string): (inventory_hostname | string)
+      (ansible_facts['distribution_version'] | string): {
+          (ansible_facts['architecture'] | string): (inventory_hostname | string)
       }
     }
   %}
   {% for item in ((groups['repo_all'] | default([inventory_hostname])) | reverse) %}
-  {%   set distro = hostvars[item]['ansible_distribution_version'] %}
-  {%   set arch = hostvars[item]['ansible_architecture'] %}
+  {%   set distro = hostvars[item]['ansible_facts']['distribution_version'] %}
+  {%   set arch = hostvars[item]['ansible_facts']['architecture'] %}
   {%   set target_item = {(arch | string): (item | string)} %}
   {%   set _ = targets.__setitem__(distro, target_item) %}
   {% endfor %}
