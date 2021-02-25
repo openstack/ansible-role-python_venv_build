@@ -13,6 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+- name: gather build target facts
+  setup:
+    gather_subset: '!all:min'
+  delegate_to: "{{ item }}"
+  delegate_facts: true
+  with_items: "{{ groups['repo_all'] | default([inventory_hostname]) }}"
+
 - include_tasks: "python_venv_wheel_build.yml"
   args:
     apply:
