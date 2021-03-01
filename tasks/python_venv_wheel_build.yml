@@ -164,10 +164,3 @@
               {{ file_name.split('-')[0] | lower }}=={{ (file_name.split('-')[1].split('_')) | join('.post') | lower }}
               {% endfor %}
             dest: "{{ venv_build_host_requirements_path }}/{{ venv_install_destination_path | basename }}-constraints.txt"
-
-    - name: Slurp up the constraints file for later re-deployment
-      slurp:
-        src: "{{ venv_build_host_requirements_path }}/{{ venv_install_destination_path | basename }}-constraints.txt"
-      register: _constraints_file_slurp
-      tags:
-        - install
