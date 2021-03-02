@@ -13,6 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+- name: Slurp up the constraints file for later re-deployment
+  delegate_to: "{{ venv_build_host }}"
+  become: "{{ venv_build_host == 'localhost' }}"
+  slurp:
+    src: "{{ venv_build_host_requirements_path }}/{{ venv_install_destination_path | basename }}-constraints.txt"
+  register: _constraints_file_slurp
+  run_once: true
+  when: venv_wheel_build_enable | bool
+
 # TODO(odyssey4me):
 # Set a fact for the selective inclusion of the build package list.
 # Perhaps do this if the distro/architecture of the target host differs
