@@ -39,7 +39,7 @@
         key: "http://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7"
         state: present
       when:
-        - ansible_facts['pkg_mgr'] in ['yum', 'dnf']
+        - ansible_facts['pkg_mgr'] == 'dnf'
       register: _add_yum_keys
       until: _add_yum_keys  is success
       retries: 5
@@ -48,14 +48,14 @@
     - name: Install the EPEL repository
       yum_repository:
         name: epel-nginx
-        baseurl: "{{ (centos_epel_mirror | default ('http://download.fedoraproject.org/pub/epel')) ~ '/' ~ ansible_facts['distribution_major_version'] ~ ((ansible_facts['distribution_major_version'] is version('8', '<')) | ternary('/', '/Everything/')) ~ ansible_facts['architecture'] }}"
+        baseurl: "{{ (centos_epel_mirror | default ('http://download.fedoraproject.org/pub/epel')) ~ '/' ~ ansible_facts['distribution_major_version'] ~ '/Everything/' ~ ansible_facts['architecture'] }}"
         description: 'Extra Packages for Enterprise Linux - $basearch'
         gpgcheck: yes
         enabled: yes
         state: present
         includepkgs: 'nginx*'
       when:
-        - ansible_facts['pkg_mgr'] in ['yum', 'dnf']
+        - ansible_facts['pkg_mgr'] == 'dnf'
       register: install_epel_repo
       until: install_epel_repo  is success
       retries: 5
@@ -64,7 +64,7 @@
     - name: Install distro packages
       package:
         name: "nginx"
-        update_cache: "{{ (ansible_facts['pkg_mgr'] in ['apt', 'zypper']) | ternary('yes', omit) }}"
+        update_cache: "{{ (ansible_facts['pkg_mgr'] == 'apt') | ternary('yes', omit) }}"
       register: install
       until: install  is success
       retries: 5
