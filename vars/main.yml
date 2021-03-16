@@ -19,20 +19,12 @@ _venv_build_base_distro_package_list:
     - g++
     - "{{ (venv_python_executable == 'python2') | ternary('pkg-config', 'python3-pkgconfig') }}"
     - "{{ (venv_python_executable == 'python2') | ternary('python-dev', 'python3-dev') }}"
-  gentoo:
-    - dev-util/cmake
   redhat:
     - autoconf
     - cmake
     - gcc
     - gcc-c++
     - "{{ (venv_python_executable == 'python2') | ternary('python2-devel', 'python3-devel') }}"
-  suse:
-    - autoconf
-    - cmake
-    - gcc
-    - gcc-c++
-    - "{{ (venv_python_executable == 'python2') | ternary('python-devel', 'python3-devel') }}"
 
 # Set the available build targets for all nodes within an environment.
 # build targets are grouped based on operating system and CPU
@@ -41,8 +33,8 @@ _venv_build_base_distro_package_list:
 # This is the data structure used to determine the build host.
 # venv_build_targets:
 #   {
-#     ansible_distribution_version: {
-#       ansible_architecture: inventory_hostname
+#     ansible_facts['distribution_version']: {
+#       ansible_facts['architecture']: inventory_hostname
 #     }
 #   }
 #

@@ -21,7 +21,7 @@
       package:
         name: "{{ venv_build_base_distro_package_list | union(venv_build_distro_package_list) }}"
         state: "{{ venv_distro_package_state }}"
-        update_cache: "{{ (ansible_facts['pkg_mgr'] in ['apt', 'zypper']) | ternary('yes', omit) }}"
+        update_cache: "{{ (ansible_facts['pkg_mgr'] == 'apt') | ternary('yes', omit) }}"
         cache_valid_time: "{{ (ansible_facts['pkg_mgr'] == 'apt') | ternary(venv_distro_cache_valid_time, omit) }}"
       when:
         - (venv_build_distro_package_list | length > 0) or
@@ -54,7 +54,7 @@
         state: directory
 
     # NOTE(odyssey4me):
-    # Not using --always-copy for CentOS/SuSE due to
+    # Not using --always-copy for CentOS due to
     # https://github.com/pypa/virtualenv/issues/565
     - name: Create the wheel build virtualenv (if it does not exist)
       command: >-

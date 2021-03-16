@@ -118,7 +118,6 @@ venv_wheel_build_enable: "{{ venv_build_host != inventory_hostname }}"
 # subsequent venv builds on this host and others. When
 # this is the same as the target host, then we will not
 # bother building wheels.
-
 venv_build_host: "{{ venv_build_targets[ansible_facts['distribution_version']][ansible_facts['architecture']] }}"
 
 # The path for the wheel build venv.
