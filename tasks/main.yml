@@ -19,6 +19,8 @@
   delegate_to: "{{ item }}"
   delegate_facts: true
   with_items: "{{ groups['repo_all'] | default([inventory_hostname]) }}"
+  tags:
+    - always
 
 - include_tasks: "python_venv_wheel_build.yml"
   args:
