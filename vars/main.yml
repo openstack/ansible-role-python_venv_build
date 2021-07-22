@@ -78,3 +78,7 @@ venv_build_targets: |-
   {{ targets }}
 
 _venv_pip_packages: "{{ (venv_default_pip_packages | union(venv_pip_packages)) | sort | select | list }}"
+
+_venv_build_dist_arch: "{{ (ansible_facts['distribution'] | lower) | replace(' ', '_') }}-{{ ansible_facts['distribution_version'].split('.')[:2] | join('.') }}-{{ ansible_facts['architecture'] | lower }}"
+
+_venv_build_requirements_prefix: "{{ venv_build_host_requirements_path }}/{{ venv_install_destination_path | basename }}"

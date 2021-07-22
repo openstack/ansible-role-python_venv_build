@@ -17,7 +17,7 @@
   delegate_to: "{{ venv_build_host }}"
   become: "{{ venv_build_host == 'localhost' }}"
   slurp:
-    src: "{{ venv_build_host_requirements_path }}/{{ venv_install_destination_path | basename }}-constraints.txt"
+    src: "{{ _venv_build_requirements_prefix }}-constraints.txt"
   register: _constraints_file_slurp
   run_once: true
   when: venv_wheel_build_enable | bool
