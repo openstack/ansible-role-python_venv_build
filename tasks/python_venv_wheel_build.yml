@@ -47,11 +47,15 @@
       file:
         path: "{{ venv_build_host_wheel_path }}"
         state: directory
+        owner: "{{ venv_build_host_user_name | default(omit) }}"
+        group: "{{ venv_build_host_group_name | default(omit) }}"
 
     - name: Create requirements/constraints file directory on the build host
       file:
         path: "{{ venv_build_host_requirements_path }}"
         state: directory
+        owner: "{{ venv_build_host_user_name | default(omit) }}"
+        group: "{{ venv_build_host_group_name | default(omit) }}"
 
     # NOTE(odyssey4me):
     # Not using --always-copy for CentOS/SuSE due to
@@ -73,6 +77,8 @@
           {% for item in _venv_pip_packages %}
           {{ item }}
           {% endfor %}
+        owner: "{{ venv_build_host_user_name | default(omit) }}"
+        group: "{{ venv_build_host_group_name | default(omit) }}"
       register: _requirement_file
 
     - name: Build global constraints file for the venv
@@ -82,6 +88,8 @@
           {% for item in venv_build_global_constraints %}
           {{ item }}
           {% endfor %}
+        owner: "{{ venv_build_host_user_name | default(omit) }}"
+        group: "{{ venv_build_host_group_name | default(omit) }}"
       register: _global_constraint_file
 
     - name: Build constraints file for the venv
@@ -91,6 +99,8 @@
           {% for item in venv_build_constraints %}
           {{ item }}
           {% endfor %}
+        owner: "{{ venv_build_host_user_name | default(omit) }}"
+        group: "{{ venv_build_host_group_name | default(omit) }}"
       register: _constraint_file
 
     - name: Upgrade the wheel build virtualenv pip/setuptools/wheel to the versions we want
@@ -143,6 +153,16 @@
             file_type: file
           register: _built_wheels
 
+        - name: Set wheel permissions
+          file:
+            path: "{{ item['path'] }}"
+            owner: "{{ venv_build_host_user_name | default(omit) }}"
+            group: "{{ venv_build_host_group_name | default(omit) }}"
+          with_items: "{{ _built_wheels['files'] }}"
+          when:
+            - (venv_build_host_user_name is defined) or
+              (venv_build_host_group_name is defined)
+
         - name: Move built wheels to common wheel path
           shell: >-
             mv /tmp/{{ venv_install_destination_path | basename }}/* {{ venv_build_host_wheel_path }}/
@@ -157,3 +177,5 @@
               {{ file_name.split('-')[0] | lower }}=={{ (file_name.split('-')[1].split('_')) | join('.post') | lower }}
               {% endfor %}
             dest: "{{ venv_build_host_requirements_path }}/{{ venv_install_destination_path | basename }}-constraints.txt"
+            owner: "{{ venv_build_host_user_name | default(omit) }}"
+            group: "{{ venv_build_host_group_name | default(omit) }}"

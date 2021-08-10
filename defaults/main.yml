@@ -120,6 +120,10 @@ venv_wheel_build_enable: "{{ venv_build_host != inventory_hostname }}"
 # bother building wheels.
 venv_build_host: "{{ venv_build_targets[ansible_distribution_version][ansible_architecture] }}"
 
+# The owner of directories and files held on the build host.
+# venv_build_host_user_name: "root"
+# venv_build_host_group_name: "root"
+
 # The path for the wheel build venv.
 # This is the path where a venv will be created on the
 # build host for the purpose of building the wheels.
