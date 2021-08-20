@@ -155,10 +155,11 @@
 
         - name: Set wheel permissions
           file:
-            path: "{{ item['path'] }}"
+            path: "/tmp/{{ venv_install_destination_path | basename }}"
             owner: "{{ venv_build_host_user_name | default(omit) }}"
             group: "{{ venv_build_host_group_name | default(omit) }}"
-          with_items: "{{ _built_wheels['files'] }}"
+            state: directory
+            recurse: yes
           when:
             - (venv_build_host_user_name is defined) or
               (venv_build_host_group_name is defined)
