@@ -97,6 +97,16 @@
       {% endif %}
   register: _constraint_file
 
+- name: Workaround pip issues on CentOS 7
+  ini_file:
+    path: /etc/pip.conf
+    section: global
+    option: cert
+    value: /etc/pki/tls/certs/ca-bundle.crt
+  when:
+    - ansible_distribution == 'CentOS'
+    - ansible_distribution_major_version == '7'
+
 - name: Upgrade pip/setuptools/wheel to the versions we want
   pip:
     name:
