@@ -22,7 +22,13 @@
       - release-notes-jobs-python3
     check:
       jobs:
-        - tripleo-ci-centos-8-standalone
+        - tripleo-ci-centos-8-standalone:
+            voting: false
+        - openstack-ansible-deploy-aio_metal-centos-7:
+            voting: false
     gate:
       jobs:
-        - tripleo-ci-centos-8-standalone
+        - tripleo-ci-centos-8-standalone:
+            voting: false
+        - openstack-ansible-deploy-aio_metal-centos-7:
+            voting: false
