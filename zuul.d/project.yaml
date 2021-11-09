@@ -22,6 +22,10 @@
     check:
       jobs:
         - tripleo-ci-centos-7-standalone-os-tempest
+        - openstack-ansible-deploy-aio_metal-centos-7:
+            voting: false
     gate:
       jobs:
         - tripleo-ci-centos-7-standalone-os-tempest
+        - openstack-ansible-deploy-aio_metal-centos-7:
+            voting: false
