@@ -20,9 +20,3 @@
       - check-requirements
       - publish-openstack-docs-pti
       - build-release-notes-jobs-python3
-    check:
-      jobs:
-        - tripleo-ci-centos-8-standalone
-    gate:
-      jobs:
-        - tripleo-ci-centos-8-standalone
