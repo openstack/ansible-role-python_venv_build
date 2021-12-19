@@ -57,15 +57,10 @@
         owner: "{{ venv_build_host_user_name | default(omit) }}"
         group: "{{ venv_build_host_group_name | default(omit) }}"
 
-    # NOTE(odyssey4me):
-    # Not using --always-copy for CentOS due to
-    # https://github.com/pypa/virtualenv/issues/565
     - name: Create the wheel build virtualenv (if it does not exist)
       command: >-
-        virtualenv
-        --no-download
-        --python={{ venv_python_executable }}
-        {{ (ansible_facts['pkg_mgr'] == 'apt') | ternary('--always-copy', '') }}
+        {{ venv_python_executable }}
+        -m venv
         {{ venv_build_host_venv_path }}
       args:
         creates: "{{ venv_build_host_venv_path }}/bin/activate"
