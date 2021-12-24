@@ -27,6 +27,11 @@ _venv_build_base_distro_package_list:
     - gcc-c++
     - "{{ (venv_python_executable == 'python2') | ternary('python2-devel', 'python3-devel') }}"
 
+_venv_install_base_distro_package_list:
+  debian:
+    - python3-venv
+  redhat: []
+
 # Set the available build targets for all nodes within an environment.
 # build targets are grouped based on operating system and CPU
 # architecture.

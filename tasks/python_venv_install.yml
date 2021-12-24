@@ -29,13 +29,13 @@
 
 - name: Install distro packages for venv build
   package:
-    name: "{{ (venv_wheel_build_enable | bool) | ternary(venv_install_distro_package_list, (venv_build_base_distro_package_list | union(venv_build_distro_package_list) | union(venv_install_distro_package_list))) }}"
+    name: "{{ (venv_wheel_build_enable | bool) | ternary(venv_install_base_distro_package_list | union(venv_install_distro_package_list), (venv_build_base_distro_package_list | union(venv_build_distro_package_list) | union(venv_install_base_distro_package_list) | union(venv_install_distro_package_list))) }}"
     state: "{{ venv_distro_package_state }}"
     update_cache: "{{ (ansible_facts['pkg_mgr'] == 'apt') | ternary('yes', omit) }}"
     cache_valid_time: "{{ (ansible_facts['pkg_mgr'] == 'apt') | ternary(venv_distro_cache_valid_time, omit) }}"
   when:
-    - (venv_build_distro_package_list | length > 0) or
-      (venv_install_distro_package_list | length > 0)
+    - ((venv_build_base_distro_package_list | union(venv_build_distro_package_list)) | length > 0) or
+      ((venv_install_base_distro_package_list | union(venv_install_distro_package_list)) | length > 0)
   register: _install_distro_packages
   until: _install_distro_packages is success
   retries: 5
