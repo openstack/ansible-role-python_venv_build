@@ -105,7 +105,7 @@
           - setuptools
           - wheel
         state: "{{ venv_pip_package_state }}"
-        virtualenv: "{{ venv_build_host_venv_path }}"
+        executable: "{{ venv_build_host_venv_path }}/bin/pip"
         extra_args: >-
           --constraint {{ _venv_build_requirements_prefix }}-global-constraints.txt
           --constraint {{ _venv_build_requirements_prefix }}-source-constraints.txt

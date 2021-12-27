@@ -55,7 +55,7 @@
 
 - name: Create the virtualenv (if it does not exist)
   command: >-
-    {{ venv_python_executable }} 
+    {{ venv_python_executable }}
     -m venv
     {{ venv_install_destination_path }}
   args:
@@ -129,7 +129,7 @@
       - setuptools
       - wheel
     state: "{{ venv_pip_package_state }}"
-    virtualenv: "{{ venv_install_destination_path }}"
+    executable: "{{ venv_install_destination_path }}/bin/pip"
     extra_args: >-
       --constraint {{ venv_install_destination_path }}/global-constraints.txt
       --constraint {{ venv_install_destination_path }}/constraints.txt
@@ -151,7 +151,7 @@
       pip:
         name: "{{ _venv_install_pip_packages }}"
         state: "{{ venv_pip_package_state }}"
-        virtualenv: "{{ venv_install_destination_path }}"
+        executable: "{{ venv_install_destination_path }}/bin/pip"
         extra_args: >-
           --constraint {{ venv_install_destination_path }}/global-constraints.txt
           --constraint {{ venv_install_destination_path }}/constraints.txt
