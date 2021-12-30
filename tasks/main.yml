@@ -38,7 +38,7 @@
       infrastructure which are reliant on this service.
       Found venv_build_targets: {{ venv_build_targets }}
   when:
-    - venv_wheel_build_enable | bool
+    - not venv_wheel_build_enable | bool
     - ansible_play_batch | length > 2
     - not (venv_wheel_build_skip_check | default(False))
 
