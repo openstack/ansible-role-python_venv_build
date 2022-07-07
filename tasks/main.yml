@@ -21,6 +21,7 @@
   with_items: "{{ groups['repo_all'] | default([inventory_hostname]) }}"
   tags:
     - always
+  run_once: true
 
 # NOTE(noonedeadpunk): If you are deploying services from local forks high load on which is not
 #                      an issue for you, you can disable this with `venv_wheel_build_skip_check: true`
