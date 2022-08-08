@@ -64,8 +64,9 @@
     apply:
       tags:
         - build
-  when: venv_wheel_build_enable | bool
-  run_once: yes
+  when:
+    - venv_wheel_build_enable | bool
+    - inventory_hostname in _venv_wheels_first_play_hosts
   tags:
     - always
 

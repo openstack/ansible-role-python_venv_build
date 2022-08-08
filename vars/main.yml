@@ -56,6 +56,18 @@ venv_build_targets: |-
   {% endfor %}
   {{ targets }}
 
+_venv_wheels_first_play_hosts: |
+  {% set first_hosts = {} %}
+  {% for host in ansible_play_hosts %}
+  {%   set arch = hostvars[host]['ansible_facts']['architecture'] %}
+  {%   set distro = hostvars[host]['ansible_facts']['distribution_version'] %}
+  {%   set distro_arch = [distro, arch] | join('_') %}
+  {%   if distro_arch not in first_hosts %}
+  {%     set _ = first_hosts.update({distro_arch: host}) %}
+  {%   endif %}
+  {% endfor %}
+  {{ first_hosts.values() }}
+
 _venv_pip_packages: "{{ (venv_default_pip_packages | union(venv_pip_packages)) | sort | select | list }}"
 
 _venv_build_dist_arch: "{{ (ansible_facts['distribution'] | lower) | replace(' ', '_') }}-{{ ansible_facts['distribution_version'].split('.')[:2] | join('.') }}-{{ ansible_facts['architecture'] | lower }}"
