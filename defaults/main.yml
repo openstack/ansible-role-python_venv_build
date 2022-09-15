@@ -116,7 +116,9 @@ venv_wheels_rebuild: no
 # If the package concerned is built from a tarball, rather
 # than from a git source or pypi, then this may be best to
 # set to false.
-venv_wheel_build_enable: "{{ venv_build_host != inventory_hostname }}"
+# Default: Enabled when more then 1 host with same arch/distro
+# is in play
+venv_wheel_build_enable: "{{ _venv_wheel_build_enable }}"
 
 # Set the host where the wheels will be built.
 # If this host is not the same as the target host, then
