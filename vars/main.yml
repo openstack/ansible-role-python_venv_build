@@ -56,17 +56,28 @@ venv_build_targets: |-
   {% endfor %}
   {{ targets }}
 
-_venv_wheels_first_play_hosts: |
-  {% set first_hosts = {} %}
+_venv_wheels_play_hosts: |
+  {% set wheel_groups = {} %}
   {% for host in ansible_play_hosts %}
   {%   set arch = hostvars[host]['ansible_facts']['architecture'] %}
   {%   set distro = hostvars[host]['ansible_facts']['distribution_version'] %}
   {%   set distro_arch = [distro, arch] | join('_') %}
-  {%   if distro_arch not in first_hosts %}
-  {%     set _ = first_hosts.update({distro_arch: host}) %}
+  {%   if distro_arch not in wheel_groups %}
+  {%     set _ = wheel_groups.update({distro_arch: [host]}) %}
+  {%   else %}
+  {%     set _ = wheel_groups[distro_arch].append(host) %}
   {%   endif %}
   {% endfor %}
-  {{ first_hosts.values() }}
+  {{ wheel_groups }}
+
+_venv_wheels_first_play_hosts: |
+  {% set first_hosts = [] %}
+  {% for distro_arch_hosts in _venv_wheels_play_hosts.values() %}
+  {%   set _ = first_hosts.append(distro_arch_hosts | first) %}
+  {% endfor %}
+  {{ first_hosts }}
+
+_venv_wheel_build_enable: "{{ (_venv_wheels_play_hosts[ansible_facts['distribution_version'] ~ '_' ~ ansible_facts['architecture']] | length > 1) | bool }}"
 
 _venv_pip_packages: "{{ (venv_default_pip_packages | union(venv_pip_packages)) | sort | select | list }}"
 
