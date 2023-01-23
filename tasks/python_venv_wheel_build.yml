@@ -113,8 +113,10 @@
           --find-links {{ venv_build_host_wheel_path }}/
           --log /var/log/python_venv_build.log
           {{ venv_pip_build_args }}
-      environment:
-        PIP_CONFIG_FILE: "{{ (venv_pip_upgrade_noconf | bool) | ternary('/dev/null', '') }}"
+      environment: "{{ venv_pip_build_env | combine(_pip_upgrade_noconf) }}"
+      vars:
+        _pip_upgrade_noconf:
+          PIP_CONFIG_FILE: "{{ (venv_pip_upgrade_noconf | bool) | ternary('/dev/null', '') }}"
       register: _update_virtualenv_packages
       until: _update_virtualenv_packages is success
       retries: 5
@@ -138,6 +140,7 @@
             --find-links {{ venv_build_host_wheel_path }}/
             --log /var/log/python_wheel_build.log
             {{ venv_pip_build_args }}
+          environment: "{{ venv_pip_build_env }}"
           register: _build_python_wheels
           until: _build_python_wheels is success
           retries: 5

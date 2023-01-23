@@ -75,6 +75,9 @@ venv_build_global_constraints: []
 # Arguments to pass to pip when building the wheels
 venv_pip_build_args: ""
 
+# Environemnt to be set for building the wheels
+venv_pip_build_env: {}
+
 # Default arguments to pass to pip when installing into
 # the venv.
 venv_default_pip_install_args: >-
@@ -85,6 +88,9 @@ venv_default_pip_install_args: >-
 
 # Arguments to pass to pip when installing into the venv
 venv_pip_install_args: ""
+
+# Environemnt to be set for building the wheels
+venv_pip_install_env: {}
 
 # Some python packages have C bindings which tend to be very
 # particular about the version of their underlying shared libraries.

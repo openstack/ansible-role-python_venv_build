@@ -135,8 +135,10 @@
       --log /var/log/python_venv_build.log
       {{ venv_default_pip_install_args }}
       {{ venv_pip_install_args }}
-  environment:
-    PIP_CONFIG_FILE: "{{ (venv_pip_upgrade_noconf | bool) | ternary('/dev/null', '') }}"
+  environment: "{{ venv_pip_install_env | combine(_pip_upgrade_noconf) }}"
+  vars:
+    _pip_upgrade_noconf:
+      PIP_CONFIG_FILE: "{{ (venv_pip_upgrade_noconf | bool) | ternary('/dev/null', '') }}"
   register: _update_virtualenv_packages
   until: _update_virtualenv_packages is success
   retries: 5
@@ -158,6 +160,7 @@
           --log /var/log/python_venv_build.log
           {{ venv_default_pip_install_args }}
           {{ venv_pip_install_args }}
+      environment: "{{ venv_pip_install_env }}"
       when: (_requirement_file is changed) or (_global_constraint_file is changed) or (_constraint_file is changed)
       register: _install_venv_pip_packages
       until: _install_venv_pip_packages is success
