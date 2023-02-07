@@ -1,0 +1,5 @@
+---
+other:
+  - |
+    Default value of ``venv_wheel_build_enable`` has been changed to True.
+    Previously it was depending on amount of hosts targeted for the play.
