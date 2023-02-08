@@ -91,8 +91,8 @@
 - name: Build requirements file for the venv
   copy:
     dest: "{{ venv_install_destination_path }}/requirements.txt"
-    content: |
-      {% for item in _venv_install_pip_packages %}
+    content: |-
+      {% for item in _venv_install_pip_packages | select() %}
       {{ item }}
       {% endfor %}
   register: _requirement_file
@@ -100,8 +100,8 @@
 - name: Build global constraints file for the venv
   copy:
     dest: "{{ venv_install_destination_path }}/global-constraints.txt"
-    content: |
-      {% for item in venv_build_global_constraints %}
+    content: |-
+      {% for item in venv_build_global_constraints | select() %}
       {{ item }}
       {% endfor %}
   register: _global_constraint_file
@@ -109,16 +109,16 @@
 - name: Build constraints file for the venv
   copy:
     dest: "{{ venv_install_destination_path }}/constraints.txt"
-    content: |
-      {% if (venv_wheel_build_enable | bool) and
+    content: |-
+      {%- if (venv_wheel_build_enable | bool) and
             (_constraints_file_slurp is defined) and
             (_constraints_file_slurp.content is defined) %}
       {{ _constraints_file_slurp.content | b64decode }}
-      {% else %}
-      {%   for item in venv_build_constraints %}
+      {%- else %}
+      {%   for item in venv_build_constraints | select() %}
       {{ item }}
       {%   endfor %}
-      {% endif %}
+      {%- endif %}
   register: _constraint_file
 
 - name: Upgrade pip/setuptools/wheel to the versions we want
