@@ -73,8 +73,8 @@
     - name: Build requirements file for the venv
       copy:
         dest: "{{ _venv_build_requirements_prefix }}-requirements.txt"
-        content: |
-          {% for item in _venv_pip_packages %}
+        content: |-
+          {% for item in _venv_pip_packages | select() %}
           {{ item }}
           {% endfor %}
         owner: "{{ venv_build_host_user_name | default(omit) }}"
@@ -84,8 +84,8 @@
     - name: Build global constraints file for the venv
       copy:
         dest: "{{ _venv_build_requirements_prefix }}-global-constraints.txt"
-        content: |
-          {% for item in venv_build_global_constraints %}
+        content: |-
+          {% for item in venv_build_global_constraints | select() %}
           {{ item }}
           {% endfor %}
         owner: "{{ venv_build_host_user_name | default(omit) }}"
@@ -95,8 +95,8 @@
     - name: Build constraints file for the venv
       copy:
         dest: "{{ _venv_build_requirements_prefix }}-source-constraints.txt"
-        content: |
-          {% for item in venv_build_constraints %}
+        content: |-
+          {% for item in venv_build_constraints | select() %}
           {{ item }}
           {% endfor %}
         owner: "{{ venv_build_host_user_name | default(omit) }}"
@@ -172,7 +172,7 @@
 
         - name: Build constraints file for installation purposes
           copy:
-            content: |
+            content: |-
               {% for file_data in _built_wheels['files'] %}
               {%   set file_name = file_data['path'] | basename %}
               {{ file_name.split('-')[0] | lower }}=={{ (file_name.split('-')[1].split('_')) | join('.post') | lower }}
