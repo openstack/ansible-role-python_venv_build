@@ -18,8 +18,6 @@
   file:
     path: /etc/ansible/facts.d
     state: directory
-  when:
-    - venv_facts_when_changed != []
 
 - name: Record the necessary facts
   become: true
@@ -30,7 +28,6 @@
     value: "{{ item.value | string }}"
   with_items: "{{ venv_facts_when_changed }}"
   when:
-    - venv_facts_when_changed != []
     - (_install_venv_pip_packages is defined and
        _install_venv_pip_packages is mapping and
        _install_venv_pip_packages is changed)

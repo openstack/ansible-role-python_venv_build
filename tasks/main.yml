@@ -73,6 +73,12 @@
   tags:
     - install
 
-- import_tasks: "python_venv_set_facts.yml"
+- include_tasks: "python_venv_set_facts.yml"
+  args:
+    apply:
+      tags:
+        - install
+  when:
+    - venv_facts_when_changed | length > 0
   tags:
-    - install
+    - always

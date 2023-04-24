@@ -46,58 +46,38 @@
 
     - name: Create wheel directory on the build host
       file:
-        path: "{{ venv_build_host_wheel_path }}"
+        path: "{{ item }}"
         state: directory
         owner: "{{ venv_build_host_user_name | default(omit) }}"
         group: "{{ venv_build_host_group_name | default(omit) }}"
+      with_items:
+        - "{{ venv_build_host_wheel_path }}"
+        - "{{ venv_build_host_requirements_path }}"
+        - "{{ venv_build_host_venv_path }}"
 
-    - name: Create requirements/constraints file directory on the build host
-      file:
-        path: "{{ venv_build_host_requirements_path }}"
-        state: directory
-        owner: "{{ venv_build_host_user_name | default(omit) }}"
-        group: "{{ venv_build_host_group_name | default(omit) }}"
-
-    - name: Create the wheel build virtualenv (if it does not exist)
-      command: >-
-        {{ venv_python_executable }}
-        -m venv
-        {{ venv_build_host_venv_path }}
-      args:
-        creates: "{{ venv_build_host_venv_path }}/bin/activate"
-
-    - name: Build requirements file for the venv
+    - name: Build requirement and constraint files for the venv
       copy:
-        dest: "{{ _venv_build_requirements_prefix }}-requirements.txt"
-        content: |-
-          {% for item in _venv_pip_packages | select() %}
-          {{ item }}
-          {% endfor %}
+        dest: "{{ item.dest }}"
+        content: "{{ item.content }}"
         owner: "{{ venv_build_host_user_name | default(omit) }}"
         group: "{{ venv_build_host_group_name | default(omit) }}"
-      register: _requirement_file
-
-    - name: Build global constraints file for the venv
-      copy:
-        dest: "{{ _venv_build_requirements_prefix }}-global-constraints.txt"
-        content: |-
-          {% for item in venv_build_global_constraints | select() %}
-          {{ item }}
-          {% endfor %}
-        owner: "{{ venv_build_host_user_name | default(omit) }}"
-        group: "{{ venv_build_host_group_name | default(omit) }}"
-      register: _global_constraint_file
-
-    - name: Build constraints file for the venv
-      copy:
-        dest: "{{ _venv_build_requirements_prefix }}-source-constraints.txt"
-        content: |-
-          {% for item in venv_build_constraints | select() %}
-          {{ item }}
-          {% endfor %}
-        owner: "{{ venv_build_host_user_name | default(omit) }}"
-        group: "{{ venv_build_host_group_name | default(omit) }}"
-      register: _constraint_file
+      with_items:
+        - dest: "{{ _venv_build_requirements_prefix }}-requirements.txt"
+          content: |-
+            {% for item in _venv_pip_packages | select() %}
+            {{ item }}
+            {% endfor %}
+        - dest: "{{ _venv_build_requirements_prefix }}-global-constraints.txt"
+          content: |-
+            {% for item in venv_build_global_constraints | select() %}
+            {{ item }}
+            {% endfor %}
+        - dest: "{{ _venv_build_requirements_prefix }}-source-constraints.txt"
+          content: |-
+            {% for item in venv_build_constraints | select() %}
+            {{ item }}
+            {% endfor %}
+      register: _requirements_contraints
 
     - name: Upgrade the wheel build virtualenv pip/setuptools/wheel to the versions we want
       pip:
@@ -106,7 +86,8 @@
           - setuptools
           - wheel
         state: "{{ venv_pip_package_state }}"
-        executable: "{{ venv_build_host_venv_path }}/bin/pip"
+        virtualenv: "{{ venv_build_host_venv_path }}"
+        virtualenv_command: "{{ venv_python_executable }} -m venv"
         extra_args: >-
           --constraint {{ _venv_build_requirements_prefix }}-global-constraints.txt
           --constraint {{ _venv_build_requirements_prefix }}-source-constraints.txt
@@ -123,7 +104,7 @@
       delay: 2
 
     - name: Build wheels and constraints file
-      when: (_requirement_file is changed) or (_global_constraint_file is changed) or (_constraint_file is changed)
+      when: _requirements_contraints.results | selectattr('changed') | length > 0
       block:
         - name: Clean up temporary wheel build path
           file:

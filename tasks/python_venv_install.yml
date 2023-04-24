@@ -49,16 +49,8 @@
 
 - name: Create the venv_install_destination_path parent directory
   file:
-    path: "{{ venv_install_destination_path | dirname }}"
+    path: "{{ venv_install_destination_path }}"
     state: directory
-
-- name: Create the virtualenv (if it does not exist)
-  command: >-
-    {{ venv_python_executable }}
-    -m venv
-    {{ venv_install_destination_path }}
-  args:
-    creates: "{{ venv_install_destination_path }}/bin/activate"
 
 # Note(jrosser)
 # If the constraints file from the wheel build has been previously collected
@@ -88,38 +80,33 @@
 # the conditional when installing the packages, any git constraints
 # would result in the package for that constraint always being
 # reinstalled.
-- name: Build requirements file for the venv
+- name: Build requirement and constraint files for the venv
   copy:
-    dest: "{{ venv_install_destination_path }}/requirements.txt"
-    content: |-
-      {% for item in _venv_install_pip_packages | select() %}
-      {{ item }}
-      {% endfor %}
-  register: _requirement_file
-
-- name: Build global constraints file for the venv
-  copy:
-    dest: "{{ venv_install_destination_path }}/global-constraints.txt"
-    content: |-
-      {% for item in venv_build_global_constraints | select() %}
-      {{ item }}
-      {% endfor %}
-  register: _global_constraint_file
-
-- name: Build constraints file for the venv
-  copy:
-    dest: "{{ venv_install_destination_path }}/constraints.txt"
-    content: |-
-      {%- if (venv_wheel_build_enable | bool) and
-            (_constraints_file_slurp is defined) and
-            (_constraints_file_slurp.content is defined) %}
-      {{ _constraints_file_slurp.content | b64decode }}
-      {%- else %}
-      {%   for item in venv_build_constraints | select() %}
-      {{ item }}
-      {%   endfor %}
-      {%- endif %}
-  register: _constraint_file
+    dest: "{{ item.dest }}"
+    content: "{{ item.content }}"
+  with_items:
+    - dest: "{{ venv_install_destination_path }}/requirements.txt"
+      content: |-
+        {% for item in _venv_install_pip_packages | select() %}
+        {{ item }}
+        {% endfor %}
+    - dest: "{{ venv_install_destination_path }}/global-constraints.txt"
+      content: |-
+        {% for item in venv_build_global_constraints | select() %}
+        {{ item }}
+        {% endfor %}
+    - dest: "{{ venv_install_destination_path }}/constraints.txt"
+      content: |-
+        {%- if (venv_wheel_build_enable | bool) and
+              (_constraints_file_slurp is defined) and
+              (_constraints_file_slurp.content is defined) %}
+        {{ _constraints_file_slurp.content | b64decode }}
+        {%- else %}
+        {%   for item in venv_build_constraints | select() %}
+        {{ item }}
+        {%   endfor %}
+        {%- endif %}
+  register: _requirement_constraints_file
 
 - name: Upgrade pip/setuptools/wheel to the versions we want
   pip:
@@ -128,7 +115,8 @@
       - setuptools
       - wheel
     state: "{{ venv_pip_package_state }}"
-    executable: "{{ venv_install_destination_path }}/bin/pip"
+    virtualenv: "{{ venv_install_destination_path }}"
+    virtualenv_command: "{{ venv_python_executable }} -m venv"
     extra_args: >-
       --constraint {{ venv_install_destination_path }}/global-constraints.txt
       --constraint {{ venv_install_destination_path }}/constraints.txt
@@ -161,7 +149,7 @@
           {{ venv_default_pip_install_args }}
           {{ venv_pip_install_args }}
       environment: "{{ venv_pip_install_env }}"
-      when: (_requirement_file is changed) or (_global_constraint_file is changed) or (_constraint_file is changed)
+      when: _requirement_constraints_file.results | selectattr('changed') | length > 0
       register: _install_venv_pip_packages
       until: _install_venv_pip_packages is success
       retries: 5
