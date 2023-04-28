@@ -20,17 +20,18 @@
 # This is the data structure used to determine the build host.
 # venv_build_targets:
 #   {
-#     ansible_facts['distribution_version']: {
-#       ansible_facts['architecture']: inventory_hostname
+#     ansible_facts['distribution'] + '_' +
+#       ansible_facts['distribution_version'] + '_' +
+#            ansible_facts['architecture']: inventory_hostname
 #     }
 #   }
 #
 # Auto generation process:
-# * The automatic build targets will iterate over the group name
-#   "repo_all" and if any target is found it will catagorize it
-#   using the distro and cpu architecture criteria.
-# * If no group named "repo_all" is found the current inventory
-#   hostname will be used as the only available build target.
+# * The current inventory hostname is inserted as the first build target
+#   and will be used if no other suitable targets are found.
+# * It then iterates over the group name "repo_all" and if any targets
+#   are found it will catagorize them by distro and cpu architecture
+#   and add them to the list of targets.
 # * If no build target is found for matching the distro and cpu
 #   criteria of the active inventory item, the generator will fall
 #   back to using the active inventory host as the build target.
@@ -42,17 +43,15 @@
 #                    deployers should be using a shared file system
 #                    for the repo servers.
 venv_build_targets: |-
-  {% set targets = {
-      (ansible_facts['distribution_version'] | string): {
-          (ansible_facts['architecture'] | string): (inventory_hostname | string)
-      }
-    }
-  %}
-  {% for item in ((groups['repo_all'] | default([inventory_hostname])) | reverse) %}
-  {%   set distro = hostvars[item]['ansible_facts']['distribution_version'] %}
+  {% set targets = {} %}
+  {% for item in ((groups['repo_all'] | default([])) | reverse) %}
+  {%   set distro = (hostvars[item]['ansible_facts']['distribution'] | lower) | replace(' ', '_') %}
+  {%   set distro_ver = hostvars[item]['ansible_facts']['distribution_version'] %}
   {%   set arch = hostvars[item]['ansible_facts']['architecture'] %}
-  {%   set target_item = {(arch | string): (item | string)} %}
-  {%   set _ = targets.__setitem__(distro, target_item) %}
+  {%   set distro_arch = [distro, distro_ver, arch] | join('_') %}
+  {%   if distro_arch not in targets %}
+  {%     set _ = targets.update({distro_arch: item | string}) %}
+  {%   endif %}
   {% endfor %}
   {{ targets }}
 
@@ -60,8 +59,9 @@ _venv_wheels_play_hosts: |
   {% set wheel_groups = {} %}
   {% for host in ansible_play_hosts %}
   {%   set arch = hostvars[host]['ansible_facts']['architecture'] %}
-  {%   set distro = hostvars[host]['ansible_facts']['distribution_version'] %}
-  {%   set distro_arch = [distro, arch] | join('_') %}
+  {%   set distro = (hostvars[host]['ansible_facts']['distribution'] | lower) | replace(' ', '_') %}
+  {%   set distro_ver = hostvars[host]['ansible_facts']['distribution_version'] %}
+  {%   set distro_arch = [distro, distro_ver, arch] | join('_') %}
   {%   if distro_arch not in wheel_groups %}
   {%     set _ = wheel_groups.update({distro_arch: [host]}) %}
   {%   else %}
