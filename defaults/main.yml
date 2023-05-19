@@ -130,7 +130,7 @@ venv_wheel_build_enable: True
 # subsequent venv builds on this host and others. When
 # this is the same as the target host, then we will not
 # bother building wheels.
-venv_build_host: "{{ venv_build_targets[ansible_facts['distribution_version']][ansible_facts['architecture']] }}"
+venv_build_host: "{{ venv_build_targets[(ansible_facts['distribution'] | lower) | replace(' ', '_') + '_' + ansible_facts['distribution_version'] + '_' + ansible_facts['architecture']] }}"
 
 # The owner of directories and files held on the build host.
 # venv_build_host_user_name: "root"
