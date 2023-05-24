@@ -46,9 +46,9 @@ venv_build_targets: |-
   {% set targets = {} %}
   {% for item in ((groups['repo_all'] | default([])) | reverse) %}
   {%   set distro = (hostvars[item]['ansible_facts']['distribution'] | lower) | replace(' ', '_') %}
-  {%   set distro_ver = hostvars[item]['ansible_facts']['distribution_version'] %}
+  {%   set distro_ver = hostvars[item]['ansible_facts']['distribution_version'].split('.')[:2] | join('.') %}
   {%   set arch = hostvars[item]['ansible_facts']['architecture'] %}
-  {%   set distro_arch = [distro, distro_ver, arch] | join('_') %}
+  {%   set distro_arch = [distro, distro_ver, arch] | join('-') %}
   {%   if distro_arch not in targets %}
   {%     set _ = targets.update({distro_arch: item | string}) %}
   {%   endif %}
@@ -60,8 +60,8 @@ _venv_wheels_play_hosts: |
   {% for host in ansible_play_hosts %}
   {%   set arch = hostvars[host]['ansible_facts']['architecture'] %}
   {%   set distro = (hostvars[host]['ansible_facts']['distribution'] | lower) | replace(' ', '_') %}
-  {%   set distro_ver = hostvars[host]['ansible_facts']['distribution_version'] %}
-  {%   set distro_arch = [distro, distro_ver, arch] | join('_') %}
+  {%   set distro_ver = hostvars[host]['ansible_facts']['distribution_version'].split('.')[:2] | join('.') %}
+  {%   set distro_arch = [distro, distro_ver, arch] | join('-') %}
   {%   if distro_arch not in wheel_groups %}
   {%     set _ = wheel_groups.update({distro_arch: [host]}) %}
   {%   else %}
