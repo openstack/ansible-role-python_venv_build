@@ -81,7 +81,7 @@ venv_pip_build_env: {}
 # Default arguments to pass to pip when installing into
 # the venv.
 venv_default_pip_install_args: >-
-  {%- if (groups['repo_all'] is defined) and (groups['repo_all'] | length > 0) and (venv_wheel_build_enable | bool) %}
+  {%- if (groups[venv_build_group] is defined) and (groups[venv_build_group] | length > 0) and (venv_wheel_build_enable | bool) %}
   --find-links {{ openstack_repo_url | default('http://localhost') }}/os-releases/{{ openstack_release | default('master') }}/{{ _venv_build_dist_arch }}/wheels
   --trusted-host {{ (openstack_repo_url | default('http://localhost')) | urlsplit('hostname') }}
   {%- endif %}
@@ -123,6 +123,10 @@ venv_wheels_rebuild: no
 # than from a git source or pypi, then this may be best to
 # set to false.
 venv_wheel_build_enable: True
+
+# Set the name of the ansible group, that will be used
+# to identify suitable host to build wheels on
+venv_build_group: repo_all
 
 # Set the host where the wheels will be built.
 # If this host is not the same as the target host, then
