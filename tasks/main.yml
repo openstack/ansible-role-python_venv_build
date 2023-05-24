@@ -58,6 +58,21 @@
     - ansible_play_batch | length > 2
     - not (venv_wheel_build_skip_check | default(False))
 
+- name: Fail if no wheels build host is available
+  fail:
+    msg: >-
+      You are trying to build wheels for the distribution or architecture
+      that you don't have build host for.
+      Please, ensure that you have at least 1 host in 'repo_all' group
+      with the following distribution: {{ _venv_build_dist_arch | replace('-', ' ') }}
+      Otherwise, consider adding matching OS to the group or set
+      `venv_wheel_build_enable: False`. Note, that you can run
+      only in a serial manner when wheel build is disabled.
+      Found venv_build_targets: {{ venv_build_targets }}
+  when:
+    - venv_wheel_build_enable | bool
+    - _venv_build_dist_arch not in venv_build_targets
+
 - include_tasks: "python_venv_wheel_build.yml"
   args:
     apply:
