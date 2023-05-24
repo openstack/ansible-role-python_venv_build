@@ -122,7 +122,7 @@ venv_wheels_rebuild: no
 # If the package concerned is built from a tarball, rather
 # than from a git source or pypi, then this may be best to
 # set to false.
-venv_wheel_build_enable: True
+venv_wheel_build_enable: "{{ (venv_build_group in groups and groups[venv_build_group] | length > 0) }}"
 
 # Set the name of the ansible group, that will be used
 # to identify suitable host to build wheels on
