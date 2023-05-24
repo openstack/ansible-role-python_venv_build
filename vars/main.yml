@@ -29,8 +29,8 @@
 # Auto generation process:
 # * The current inventory hostname is inserted as the first build target
 #   and will be used if no other suitable targets are found.
-# * It then iterates over the group name "repo_all" and if any targets
-#   are found it will catagorize them by distro and cpu architecture
+# * It then iterates over the group defined by {{ venv_build_group }} and if any
+#   targets are found it will catagorize them by distro and cpu architecture
 #   and add them to the list of targets.
 # * If no build target is found for matching the distro and cpu
 #   criteria of the active inventory item, the generator will fall
@@ -44,7 +44,7 @@
 #                    for the repo servers.
 venv_build_targets: |-
   {% set targets = {} %}
-  {% for item in ((groups['repo_all'] | default([])) | reverse) %}
+  {% for item in ((groups[venv_build_group] | default([])) | reverse) %}
   {%   set distro = (hostvars[item]['ansible_facts']['distribution'] | lower) | replace(' ', '_') %}
   {%   set distro_ver = hostvars[item]['ansible_facts']['distribution_version'].split('.')[:2] | join('.') %}
   {%   set arch = hostvars[item]['ansible_facts']['architecture'] %}

@@ -33,7 +33,7 @@
     gather_subset: '!all:min'
   delegate_to: "{{ item }}"
   delegate_facts: true
-  with_items: "{{ groups['repo_all'] | default([inventory_hostname]) }}"
+  with_items: "{{ groups[venv_build_group] | default([inventory_hostname]) }}"
   tags:
     - always
   run_once: true
@@ -63,7 +63,7 @@
     msg: >-
       You are trying to build wheels for the distribution or architecture
       that you don't have build host for.
-      Please, ensure that you have at least 1 host in 'repo_all' group
+      Please, ensure that you have at least 1 host in {{ venv_build_group }} group
       with the following distribution: {{ _venv_build_dist_arch | replace('-', ' ') }}
       Otherwise, consider adding matching OS to the group or set
       `venv_wheel_build_enable: False`. Note, that you can run
