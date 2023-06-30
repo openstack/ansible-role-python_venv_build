@@ -28,10 +28,10 @@
     {{ (ansible_facts['pkg_mgr'] == 'apt') | ternary('dpkg -L ' ~ (venv_packages_to_symlink | join(' ')), 'rpm -ql ' ~ (venv_packages_to_symlink | join(' ')) ) }}
     | egrep '^.*{{ _venv_python_major_version }}.*/(site|dist)-packages/.*'
     | egrep -v "__pycache__"
-  args:
-    warn: no
   changed_when: false
   register: _python_files
+  tags:
+    - skip_ansible_lint
 
 - name: Link the python host package files into venv
   vars:
