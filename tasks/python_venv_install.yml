@@ -28,7 +28,18 @@
 
 - name: Install distro packages for venv build
   package:
-    name: "{{ (venv_wheel_build_enable | bool) | ternary(venv_install_base_distro_package_list | union(venv_install_distro_package_list), (venv_build_base_distro_package_list | union(venv_build_distro_package_list) | union(venv_install_base_distro_package_list) | union(venv_install_distro_package_list))) }}"
+    name: >-
+      {{
+        (venv_wheel_build_enable | bool) | ternary(
+          venv_install_base_distro_package_list | union(venv_install_distro_package_list),
+          (
+            venv_build_base_distro_package_list |
+            union(venv_build_distro_package_list) |
+            union(venv_install_base_distro_package_list) |
+            union(venv_install_distro_package_list)
+          )
+        )
+      }}
     state: "{{ venv_distro_package_state }}"
     update_cache: "{{ (ansible_facts['pkg_mgr'] == 'apt') | ternary('yes', omit) }}"
     cache_valid_time: "{{ (ansible_facts['pkg_mgr'] == 'apt') | ternary(venv_distro_cache_valid_time, omit) }}"
@@ -51,6 +62,7 @@
   file:
     path: "{{ venv_install_destination_path }}"
     state: directory
+    mode: "0755"
 
 # Note(jrosser)
 # If the constraints file from the wheel build has been previously collected
@@ -84,6 +96,7 @@
   copy:
     dest: "{{ item.dest }}"
     content: "{{ item.content }}"
+    mode: "0644"
   with_items:
     - dest: "{{ venv_install_destination_path }}/requirements.txt"
       content: |-

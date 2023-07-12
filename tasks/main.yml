@@ -28,7 +28,7 @@
   tags:
     - always
 
-- name: gather build target facts
+- name: Gather build target facts
   setup:
     gather_subset: '!all:min'
   delegate_to: "{{ item }}"
@@ -73,7 +73,8 @@
     - venv_wheel_build_enable | bool
     - _venv_build_dist_arch not in venv_build_targets
 
-- include_tasks: "python_venv_wheel_build.yml"
+- name: Including python_venv_wheel_build tasks
+  include_tasks: "python_venv_wheel_build.yml"
   args:
     apply:
       tags:
@@ -84,11 +85,13 @@
   tags:
     - always
 
-- import_tasks: "python_venv_install.yml"
+- name: Including python_venv_install tasks
+  import_tasks: "python_venv_install.yml"
   tags:
     - install
 
-- include_tasks: "python_venv_set_facts.yml"
+- name: Including python_venv_set_facts tasks
+  include_tasks: "python_venv_set_facts.yml"
   args:
     apply:
       tags:

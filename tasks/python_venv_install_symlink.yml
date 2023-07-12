@@ -25,7 +25,12 @@
   vars:
     _venv_python_major_version: "{{ (_python_venv_details.files[0].path | basename | split('.') )[0] }}"
   shell: >-
-    {{ (ansible_facts['pkg_mgr'] == 'apt') | ternary('dpkg -L ' ~ (venv_packages_to_symlink | join(' ')), 'rpm -ql ' ~ (venv_packages_to_symlink | join(' ')) ) }}
+    {{
+      (ansible_facts['pkg_mgr'] == 'apt') | ternary(
+        'dpkg -L ' ~ (venv_packages_to_symlink | join(' ')),
+        'rpm -ql ' ~ (venv_packages_to_symlink | join(' '))
+      )
+    }}
     | egrep '^.*{{ _venv_python_major_version }}.*/(site|dist)-packages/.*'
     | egrep -v "__pycache__"
   changed_when: false

@@ -18,6 +18,7 @@
   file:
     path: /etc/ansible/facts.d
     state: directory
+    mode: "0755"
 
 - name: Record the necessary facts
   become: true
@@ -26,6 +27,7 @@
     section: "{{ item.section }}"
     option: "{{ item.option }}"
     value: "{{ item.value | string }}"
+    mode: "0644"
   with_items: "{{ venv_facts_when_changed }}"
   when:
     - (_install_venv_pip_packages is defined and
