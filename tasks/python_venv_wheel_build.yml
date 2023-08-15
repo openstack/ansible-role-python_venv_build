@@ -19,14 +19,14 @@
   block:
     - name: Install distro packages for wheel build
       vars:
-        _package_list: "{{ venv_build_base_distro_package_list | union(venv_build_distro_package_list) }}"
+        _python_wheel_build_package_list: "{{ venv_build_base_distro_package_list | union(venv_build_distro_package_list) }}"
       package:
-        name: "{{ _package_list }}"
+        name: "{{ _python_wheel_build_package_list }}"
         state: "{{ venv_distro_package_state }}"
         update_cache: "{{ (ansible_facts['pkg_mgr'] == 'apt') | ternary('yes', omit) }}"
         cache_valid_time: "{{ (ansible_facts['pkg_mgr'] == 'apt') | ternary(venv_distro_cache_valid_time, omit) }}"
       when:
-        - _package_list | length > 0
+        - _python_wheel_build_package_list | length > 0
       register: _install_build_distro_packages
       until: _install_build_distro_packages is success
       retries: 5
