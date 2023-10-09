@@ -46,7 +46,11 @@ venv_build_targets: |-
   {% set targets = {} %}
   {% for item in ((groups[venv_build_group] | default([])) | reverse) %}
   {%   set distro = (hostvars[item]['ansible_facts']['distribution'] | lower) | replace(' ', '_') %}
-  {%   set distro_ver = hostvars[item]['ansible_facts']['distribution_version'].split('.')[:2] | join('.') %}
+  {%   if distro == 'debian' or distro == 'centos' %}
+  {%     set distro_ver = hostvars[item]['ansible_facts']['distribution_major_version'] %}
+  {%   else %}
+  {%     set distro_ver = hostvars[item]['ansible_facts']['distribution_version'].split('.')[:2] | join('.') %}
+  {%   endif %}
   {%   set arch = hostvars[item]['ansible_facts']['architecture'] %}
   {%   set distro_arch = [distro, distro_ver, arch] | join('-') %}
   {%   if distro_arch not in targets %}
@@ -60,7 +64,11 @@ _venv_wheels_play_hosts: |
   {% for host in ansible_play_hosts %}
   {%   set arch = hostvars[host]['ansible_facts']['architecture'] %}
   {%   set distro = (hostvars[host]['ansible_facts']['distribution'] | lower) | replace(' ', '_') %}
-  {%   set distro_ver = hostvars[host]['ansible_facts']['distribution_version'].split('.')[:2] | join('.') %}
+  {%   if distro == 'debian' or distro == 'centos' %}
+  {%     set distro_ver = hostvars[host]['ansible_facts']['distribution_major_version'] %}
+  {%   else %}
+  {%     set distro_ver = hostvars[host]['ansible_facts']['distribution_version'].split('.')[:2] | join('.') %}
+  {%   endif %}
   {%   set distro_arch = [distro, distro_ver, arch] | join('-') %}
   {%   if distro_arch not in wheel_groups %}
   {%     set _ = wheel_groups.update({distro_arch: [host]}) %}
@@ -79,6 +87,12 @@ _venv_wheels_first_play_hosts: |
 
 _venv_pip_packages: "{{ (venv_default_pip_packages | union(venv_pip_packages)) | sort | select | list }}"
 
-_venv_build_dist_arch: "{{ (ansible_facts['distribution'] | lower) | replace(' ', '_') }}-{{ ansible_facts['distribution_version'].split('.')[:2] | join('.') }}-{{ ansible_facts['architecture'] | lower }}"
+_venv_build_dist: >-
+  {{ (ansible_facts['distribution'] | lower == 'debian' or ansible_facts['distribution'] | lower == 'centos') | ternary(
+      ansible_facts['distribution_major_version'],
+      ansible_facts['distribution_version'].split('.')[:2] | join('.')
+  ) }}
+
+_venv_build_dist_arch: "{{ (ansible_facts['distribution'] | lower) | replace(' ', '_') }}-{{ _venv_build_dist }}-{{ ansible_facts['architecture'] | lower }}"
 
 _venv_build_requirements_prefix: "{{ venv_build_host_requirements_path }}/{{ venv_install_destination_path | basename }}"
