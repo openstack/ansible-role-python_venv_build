@@ -15,7 +15,6 @@
 
 - name: Build the wheels on the build host
   delegate_to: "{{ venv_build_host }}"
-  become: "{{ venv_build_host == 'localhost' }}"
   block:
     - name: Install distro packages for wheel build
       vars:
