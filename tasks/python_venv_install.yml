@@ -15,7 +15,6 @@
 
 - name: Slurp up the constraints file for later re-deployment
   delegate_to: "{{ venv_build_host }}"
-  become: "{{ venv_build_host == 'localhost' }}"
   slurp:
     src: "{{ _venv_build_requirements_prefix }}-constraints.txt"
   register: _constraints_file_slurp

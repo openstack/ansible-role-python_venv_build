@@ -14,14 +14,12 @@
 # limitations under the License.
 
 - name: Ensure local facts folder exists
-  become: true
   file:
     path: /etc/ansible/facts.d
     state: directory
     mode: "0755"
 
 - name: Record the necessary facts
-  become: true
   ini_file:
     dest: "/etc/ansible/facts.d/{{ venv_facts_dest }}.fact"
     section: "{{ item.section }}"
