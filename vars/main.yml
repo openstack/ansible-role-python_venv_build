@@ -46,10 +46,10 @@ venv_build_targets: |-
   {% set targets = {} %}
   {% for item in ((groups[venv_build_group] | default([])) | reverse) %}
   {%   set distro = (hostvars[item]['ansible_facts']['distribution'] | lower) | replace(' ', '_') %}
-  {%   if distro == 'debian' or distro == 'centos' %}
-  {%     set distro_ver = hostvars[item]['ansible_facts']['distribution_major_version'] %}
-  {%   else %}
+  {%   if distro == 'ubuntu' %}
   {%     set distro_ver = hostvars[item]['ansible_facts']['distribution_version'].split('.')[:2] | join('.') %}
+  {%   else %}
+  {%     set distro_ver = hostvars[item]['ansible_facts']['distribution_major_version'] %}
   {%   endif %}
   {%   set arch = hostvars[item]['ansible_facts']['architecture'] %}
   {%   set distro_arch = [distro, distro_ver, arch] | join('-') %}
@@ -64,10 +64,10 @@ _venv_wheels_play_hosts: |-
   {% for host in ansible_play_hosts %}
   {%   set arch = hostvars[host]['ansible_facts']['architecture'] %}
   {%   set distro = (hostvars[host]['ansible_facts']['distribution'] | lower) | replace(' ', '_') %}
-  {%   if distro == 'debian' or distro == 'centos' %}
-  {%     set distro_ver = hostvars[host]['ansible_facts']['distribution_major_version'] %}
-  {%   else %}
+  {%   if distro == 'ubuntu' %}
   {%     set distro_ver = hostvars[host]['ansible_facts']['distribution_version'].split('.')[:2] | join('.') %}
+  {%   else %}
+  {%     set distro_ver = hostvars[host]['ansible_facts']['distribution_major_version'] %}
   {%   endif %}
   {%   set distro_arch = [distro, distro_ver, arch] | join('-') %}
   {%   if distro_arch not in wheel_groups %}
@@ -89,9 +89,9 @@ _venv_pip_packages: "{{ (venv_default_pip_packages | union(venv_pip_packages)) |
 
 
 _venv_build_dist: >-
-  {{ (ansible_facts['distribution'] | lower == 'debian' or ansible_facts['distribution'] | lower == 'centos') | ternary(
-      ansible_facts['distribution_major_version'],
-      ansible_facts['distribution_version'].split('.')[:2] | join('.')
+  {{ (ansible_facts['distribution'] | lower == 'ubuntu') | ternary(
+      ansible_facts['distribution_version'].split('.')[:2] | join('.'),
+      ansible_facts['distribution_major_version']
   ) }}
 
 _venv_build_dist_arch: >-
