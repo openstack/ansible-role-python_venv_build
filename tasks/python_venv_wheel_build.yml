@@ -16,6 +16,7 @@
 - name: Build the wheels on the build host
   delegate_to: "{{ venv_build_host }}"
   block:
+    # NOTE(jrosser) remove the use: parameter when https://github.com/ansible/ansible/issues/82598 is fixed
     - name: Install distro packages for wheel build
       vars:
         _python_wheel_build_package_list: "{{ venv_build_base_distro_package_list | union(venv_build_distro_package_list) }}"
@@ -24,6 +25,7 @@
         state: "{{ venv_distro_package_state }}"
         update_cache: "{{ (ansible_facts['pkg_mgr'] == 'apt') | ternary('yes', omit) }}"
         cache_valid_time: "{{ (ansible_facts['pkg_mgr'] == 'apt') | ternary(venv_distro_cache_valid_time, omit) }}"
+        use: "{{ ansible_facts['pkg_mgr'] }}"
       when:
         - _python_wheel_build_package_list | length > 0
       register: _install_build_distro_packages

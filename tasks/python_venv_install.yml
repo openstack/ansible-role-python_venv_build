@@ -25,6 +25,7 @@
 # Perhaps do this if the distro/architecture of the target host differs
 # from the build host.
 
+# NOTE(jrosser) remove the use: parameter when https://github.com/ansible/ansible/issues/82598 is fixed
 - name: Install distro packages for venv build
   package:
     name: >-
@@ -42,6 +43,7 @@
     state: "{{ venv_distro_package_state }}"
     update_cache: "{{ (ansible_facts['pkg_mgr'] == 'apt') | ternary('yes', omit) }}"
     cache_valid_time: "{{ (ansible_facts['pkg_mgr'] == 'apt') | ternary(venv_distro_cache_valid_time, omit) }}"
+    use: "{{ ansible_facts['pkg_mgr'] }}"
   when:
     - ((venv_build_base_distro_package_list | union(venv_build_distro_package_list)) | length > 0) or
       ((venv_install_base_distro_package_list | union(venv_install_distro_package_list)) | length > 0)
