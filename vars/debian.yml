@@ -24,3 +24,5 @@ _venv_build_base_distro_package_list:
 _venv_install_base_distro_package_list:
     - python3-venv
     - python3-setuptools
+
+_venv_install_ca_bundle_path: /etc/ssl/certs/ca-certificates.crt

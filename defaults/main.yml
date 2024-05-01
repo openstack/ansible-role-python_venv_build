@@ -90,7 +90,8 @@ venv_default_pip_install_args: >-
 venv_pip_install_args: ""
 
 # Environemnt to be set for building the wheels
-venv_pip_install_env: {}
+venv_pip_install_env:
+  REQUESTS_CA_BUNDLE: "{{ _venv_install_ca_bundle_path }}"
 
 # Some python packages have C bindings which tend to be very
 # particular about the version of their underlying shared libraries.

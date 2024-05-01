@@ -21,3 +21,5 @@ _venv_build_base_distro_package_list:
     - python3-devel
 
 _venv_install_base_distro_package_list: []
+
+_venv_install_ca_bundle_path: /etc/pki/tls/certs/ca-bundle.crt
