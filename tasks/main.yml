@@ -33,6 +33,10 @@
     gather_subset: '!all:min'
   delegate_to: "{{ item }}"
   delegate_facts: true
+  # NOTE(noonedeadpunk): failed_when is used instead of ignore_errors as latter
+  #                      results in failed task, meaning that gathered facts for
+  #                      reachable hosts are not preserved as a result.
+  failed_when: false
   with_items: "{{ groups[venv_build_group] | default([inventory_hostname]) }}"
   tags:
     - always
