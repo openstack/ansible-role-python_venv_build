@@ -45,13 +45,13 @@
 venv_build_targets: |-
   {% set targets = {} %}
   {% for item in ((groups[venv_build_group] | default([])) | reverse) %}
-  {%   set distro = (hostvars[item]['ansible_facts']['distribution'] | lower) | replace(' ', '_') %}
+  {%   set distro = (hostvars[item]['ansible_facts']['distribution'] | default('none') | lower) | replace(' ', '_') %}
   {%   if distro == 'ubuntu' %}
-  {%     set distro_ver = hostvars[item]['ansible_facts']['distribution_version'].split('.')[:2] | join('.') %}
+  {%     set distro_ver = (hostvars[item]['ansible_facts']['distribution_version'] | default('none.none')).split('.')[:2] | join('.') %}
   {%   else %}
-  {%     set distro_ver = hostvars[item]['ansible_facts']['distribution_major_version'] %}
+  {%     set distro_ver = hostvars[item]['ansible_facts']['distribution_major_version'] | default('none') %}
   {%   endif %}
-  {%   set arch = hostvars[item]['ansible_facts']['architecture'] %}
+  {%   set arch = hostvars[item]['ansible_facts']['architecture'] | default('none') %}
   {%   set distro_arch = [distro, distro_ver, arch] | join('-') %}
   {%   if distro_arch not in targets %}
   {%     set _ = targets.update({distro_arch: item | string}) %}
