@@ -124,6 +124,7 @@
             --find-links {{ venv_build_host_wheel_path }}/
             --log /var/log/python_wheel_build.log
             {{ venv_pip_build_args }}
+            {{ venv_wheels_rebuild | ternary('--no-cache-dir', '') }}
           environment: "{{ venv_pip_build_env }}"
           register: _build_python_wheels
           until: _build_python_wheels is success
