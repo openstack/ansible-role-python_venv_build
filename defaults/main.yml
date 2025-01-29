@@ -82,7 +82,7 @@ venv_pip_build_env: {}
 # the venv.
 venv_default_pip_install_args: >-
   {%- if (groups[venv_build_group] is defined) and (groups[venv_build_group] | length > 0) and (venv_wheel_build_enable | bool) %}
-  --find-links {{ openstack_repo_url | default('http://localhost') }}/os-releases/{{ openstack_release | default('master') }}/{{ _venv_build_dist_arch }}/wheels
+  --find-links {{ openstack_repo_url | default('http://localhost') }}/os-releases/{{ openstack_release | default('master') }}/{{ _venv_build_dist_arch }}/wheels/
   --trusted-host {{ (openstack_repo_url | default('http://localhost')) | urlsplit('hostname') -}}
   {%- endif %}
 
