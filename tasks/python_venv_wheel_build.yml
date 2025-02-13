@@ -20,7 +20,7 @@
     - name: Install distro packages for wheel build
       vars:
         _python_wheel_build_package_list: "{{ venv_build_base_distro_package_list | union(venv_build_distro_package_list) }}"
-      package:
+      ansible.builtin.package:
         name: "{{ _python_wheel_build_package_list }}"
         state: "{{ venv_distro_package_state }}"
         update_cache: "{{ (ansible_facts['pkg_mgr'] == 'apt') | ternary('yes', omit) }}"
@@ -34,7 +34,7 @@
       delay: 2
 
     - name: Clean up paths and files if venv_wheels_rebuild is enabled
-      file:
+      ansible.builtin.file:
         path: "{{ item }}"
         state: absent
       with_items:
@@ -46,7 +46,7 @@
         - venv_wheels_rebuild | bool
 
     - name: Create wheel directory on the build host
-      file:
+      ansible.builtin.file:
         path: "{{ item }}"
         state: directory
         owner: "{{ venv_build_host_user_name | default(omit) }}"
@@ -58,7 +58,7 @@
         - "{{ venv_build_host_venv_path }}"
 
     - name: Build requirement and constraint files for the venv
-      copy:
+      ansible.builtin.copy:
         dest: "{{ item.dest }}"
         content: "{{ item.content }}"
         owner: "{{ venv_build_host_user_name | default(omit) }}"
@@ -83,7 +83,7 @@
       register: _requirements_contraints
 
     - name: Upgrade the wheel build virtualenv pip/setuptools/wheel to the versions we want
-      pip:
+      ansible.builtin.pip:
         name:
           - pip
           - setuptools
@@ -110,12 +110,12 @@
       when: _requirements_contraints.results | selectattr('changed') | length > 0
       block:
         - name: Clean up temporary wheel build path
-          file:
+          ansible.builtin.file:
             path: "/tmp/{{ venv_install_destination_path | basename }}"
             state: absent
 
         - name: Build wheels for the packages to be installed into the venv # noqa: no-changed-when
-          command: >-
+          ansible.builtin.command: >-
             {{  venv_build_host_venv_path }}/bin/pip wheel
             --requirement {{ _venv_build_requirements_prefix }}-requirements.txt
             --constraint {{ _venv_build_requirements_prefix }}-global-constraints.txt
@@ -132,13 +132,13 @@
           delay: 2
 
         - name: Index built wheels
-          find:
+          ansible.builtin.find:
             paths: "/tmp/{{ venv_install_destination_path | basename }}"
             file_type: file
           register: _built_wheels
 
         - name: Set wheel permissions
-          file:
+          ansible.builtin.file:
             path: "/tmp/{{ venv_install_destination_path | basename }}"
             owner: "{{ venv_build_host_user_name | default(omit) }}"
             group: "{{ venv_build_host_group_name | default(omit) }}"
@@ -149,14 +149,14 @@
               (venv_build_host_group_name is defined)
 
         - name: Move built wheels to common wheel path
-          shell: >-
+          ansible.builtin.shell: >-
             mv /tmp/{{ venv_install_destination_path | basename }}/* {{ venv_build_host_wheel_path }}/
           changed_when: false
           args:
             executable: /bin/bash
 
         - name: Build constraints file for installation purposes
-          copy:
+          ansible.builtin.copy:
             content: |-
               {% for file_data in _built_wheels['files'] %}
               {%   set file_name = file_data['path'] | basename %}

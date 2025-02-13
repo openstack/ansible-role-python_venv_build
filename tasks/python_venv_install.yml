@@ -15,7 +15,7 @@
 
 - name: Slurp up the constraints file for later re-deployment
   delegate_to: "{{ venv_build_host }}"
-  slurp:
+  ansible.builtin.slurp:
     src: "{{ _venv_build_requirements_prefix }}-constraints.txt"
   register: _constraints_file_slurp
   when: venv_wheel_build_enable | bool
@@ -27,7 +27,7 @@
 
 # NOTE(jrosser) remove the use: parameter when https://github.com/ansible/ansible/issues/82598 is fixed
 - name: Install distro packages for venv build
-  package:
+  ansible.builtin.package:
     name: >-
       {{
         (venv_wheel_build_enable | bool) | ternary(
@@ -53,14 +53,14 @@
   delay: 2
 
 - name: Ensure a fresh venv_install_destination_path if venv_rebuild is enabled
-  file:
+  ansible.builtin.file:
     path: "{{ venv_install_destination_path }}"
     state: absent
   when:
     - venv_rebuild | bool
 
 - name: Create the venv_install_destination_path parent directory
-  file:
+  ansible.builtin.file:
     path: "{{ venv_install_destination_path }}"
     state: directory
     mode: "0755"
@@ -72,7 +72,7 @@
 # contain the built version in the form foo=1.2.3dev4, and the requirements
 # file must just specify 'foo'.
 - name: Create the requirements file contents
-  set_fact:
+  ansible.builtin.set_fact:
     _venv_install_pip_packages: |
       {% if (venv_wheel_build_enable | bool) and
             (_constraints_file_slurp is defined) and
@@ -94,7 +94,7 @@
 # would result in the package for that constraint always being
 # reinstalled.
 - name: Build requirement and constraint files for the venv
-  copy:
+  ansible.builtin.copy:
     dest: "{{ item.dest }}"
     content: "{{ item.content }}"
     mode: "0644"
@@ -123,7 +123,7 @@
   register: _requirement_constraints_file
 
 - name: Upgrade pip/setuptools/wheel to the versions we want
-  pip:
+  ansible.builtin.pip:
     name:
       - pip
       - setuptools
@@ -151,7 +151,7 @@
 - name: Install python packages into the venv
   block:
     - name: Install python packages into the venv
-      pip:
+      ansible.builtin.pip:
         name: "{{ _venv_install_pip_packages }}"
         state: "{{ venv_pip_package_state }}"
         executable: "{{ venv_install_destination_path }}/bin/pip"
@@ -172,7 +172,7 @@
         - venv changed
   rescue:
     - name: Remove venv requirements/constraints files due to install failure
-      file:
+      ansible.builtin.file:
         path: "{{ item }}"
         state: absent
       with_items:
@@ -180,13 +180,13 @@
         - "{{ venv_install_destination_path }}/global-constraints.txt"
         - "{{ venv_install_destination_path }}/requirements.txt"
     - name: Show venv install failure message
-      fail:
+      ansible.builtin.fail:
         msg: >
           The python packages have failed to install, please check the log file
           located at /var/log/python_venv_build.log for more information.
 
 - name: Add symlinks from distribution python packages
-  include_tasks: python_venv_install_symlink.yml
+  ansible.builtin.include_tasks: python_venv_install_symlink.yml
   args:
     apply:
       tags:

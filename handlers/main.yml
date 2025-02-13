@@ -14,7 +14,7 @@
 # limitations under the License.
 
 - name: Virtual Environment changed
-  meta: noop
+  ansible.builtin.meta: noop
   when: false
   listen:
     - venv changed

@@ -14,7 +14,7 @@
 # limitations under the License.
 
 - name: Find the venv's python version
-  find:
+  ansible.builtin.find:
     paths: "{{ venv_install_destination_path }}/lib/"
     patterns: "python*"
     file_type: directory
@@ -24,7 +24,7 @@
 - name: Search for lib files to link
   vars:
     _venv_python_major_version: "{{ (_python_venv_details.files[0].path | basename | split('.') )[0] }}"
-  shell: >-
+  ansible.builtin.shell: >-
     {{
       (ansible_facts['pkg_mgr'] == 'apt') | ternary(
         'dpkg -L ' ~ (venv_packages_to_symlink | join(' ')),
@@ -41,7 +41,7 @@
 - name: Link the python host package files into venv
   vars:
     _venv_python_lib_folder: "{{ _python_venv_details.files[0].path }}"
-  file:
+  ansible.builtin.file:
     src: "{{ item }}"
     dest: "{{ _venv_python_lib_folder }}/site-packages/{{ item | basename }}"
     state: link
