@@ -18,7 +18,7 @@
     paths: "{{ venv_install_destination_path }}/lib/"
     patterns: "python*"
     file_type: directory
-    recurse: no
+    recurse: false
   register: _python_venv_details
 
 - name: Search for lib files to link
@@ -45,5 +45,5 @@
     src: "{{ item }}"
     dest: "{{ _venv_python_lib_folder }}/site-packages/{{ item | basename }}"
     state: link
-    force: yes
+    force: true
   with_items: "{{ _python_files.stdout_lines }}"

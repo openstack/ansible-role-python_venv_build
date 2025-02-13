@@ -14,11 +14,11 @@
 # limitations under the License.
 
 _venv_build_base_distro_package_list:
-    - autoconf
-    - cmake
-    - gcc
-    - gcc-c++
-    - python3-devel
+  - autoconf
+  - cmake
+  - gcc
+  - gcc-c++
+  - python3-devel
 
 _venv_install_base_distro_package_list: []
 

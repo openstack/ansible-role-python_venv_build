@@ -30,7 +30,7 @@
 
 - name: Gather build target facts
   setup:
-    gather_subset: '!all:min'
+    gather_subset: "!all:min"
   delegate_to: "{{ item }}"
   delegate_facts: true
   # NOTE(noonedeadpunk): failed_when is used instead of ignore_errors as latter
