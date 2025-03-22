@@ -98,7 +98,7 @@
     dest: "{{ item.dest }}"
     content: "{{ item.content }}"
     mode: "0644"
-  with_items:
+  loop:
     - dest: "{{ venv_install_destination_path }}/requirements.txt"
       content: |-
         {% for item in _venv_install_pip_packages | select() %}
@@ -120,6 +120,8 @@
         {{ item }}
         {%   endfor %}
         {%- endif %}
+  loop_control:
+    label: "{{ item.dest }}"
   register: _requirement_constraints_file
 
 - name: Upgrade pip/setuptools/wheel to the versions we want
