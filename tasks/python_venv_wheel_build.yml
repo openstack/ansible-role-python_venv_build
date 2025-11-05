@@ -45,6 +45,14 @@
       when:
         - venv_wheels_rebuild | bool
 
+    - name: Ensure a fresh venv_build_host_venv_path if venv_rebuild is enabled
+      ansible.builtin.file:
+        path: "{{ venv_build_host_venv_path }}"
+        state: absent
+      when:
+        - venv_rebuild | bool
+        - venv_wheels_rebuild | bool
+
     - name: Create wheel directory on the build host
       ansible.builtin.file:
         path: "{{ item }}"
