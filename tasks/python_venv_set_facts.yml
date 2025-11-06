@@ -30,4 +30,7 @@
   when:
     - (_install_venv_pip_packages is defined and
        _install_venv_pip_packages is mapping and
-       _install_venv_pip_packages is changed)
+       _install_venv_pip_packages is changed) or
+      (_install_venv_uv_packages is defined and
+       _install_venv_uv_packages is mapping and
+       _install_venv_uv_packages is changed)

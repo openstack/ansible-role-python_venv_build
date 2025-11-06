@@ -25,6 +25,10 @@
 # Optional variables
 #
 
+# Select the tooling which will be used for package installation
+# Valid options: pip, uv
+venv_install_tool: pip
+
 # Distribution packages which must be installed
 # on all hosts when building python wheels.
 venv_build_base_distro_package_list: "{{ _venv_build_base_distro_package_list }}"
