@@ -97,6 +97,7 @@
           --constraint {{ _venv_build_requirements_prefix }}-global-constraints.txt
           --constraint {{ _venv_build_requirements_prefix }}-source-constraints.txt
           --find-links {{ venv_build_host_wheel_path }}/
+          --trusted-host {{ (openstack_repo_url | default('http://localhost')) | urlsplit('hostname') }}
           --log /var/log/python_venv_build.log
           {{ venv_pip_build_args }}
       environment: "{{ venv_pip_build_env | combine(_pip_upgrade_noconf) }}"
@@ -124,6 +125,7 @@
             --constraint {{ _venv_build_requirements_prefix }}-source-constraints.txt
             --wheel-dir /tmp/{{ venv_install_destination_path | basename }}/
             --find-links {{ venv_build_host_wheel_path }}/
+            --trusted-host {{ (openstack_repo_url | default('http://localhost')) | urlsplit('hostname') }}
             --log /var/log/python_wheel_build.log
             {{ venv_pip_build_args }}
             {{ venv_wheels_rebuild | ternary('--no-cache-dir', '') }}
