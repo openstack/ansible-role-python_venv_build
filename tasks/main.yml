@@ -42,40 +42,40 @@
     - always
   run_once: true
 
-# NOTE(noonedeadpunk): If you are deploying services from local forks high load on which is not
-#                      an issue for you, you can disable this with `venv_wheel_build_skip_check: true`
-- name: Fail if wheels are not built for multiple hosts
+- name: Fail if wheels build is problematic
+  vars:
+    _venv_wheel_build_errors:
+      # NOTE(noonedeadpunk): If you are deploying services from local forks high load on which is not
+      #                      an issue for you, you can disable this with `venv_wheel_build_skip_check: true`
+      - msg: |
+          You are not building wheels while running role against multiple hosts.
+          This might result in DOS-ing OpenDev infrustructure servers.
+          In order to proceed, please ensure that you have repo servers
+          for selected OS version and architecture.
+          If you want to avoid building wheel on purpose, ensure that you run
+          playbook in serial manner.
+          In case of causing unreasonable load on the opendev.org git servers,
+          your access may be blocked to protect other users and the OpenDev CI
+          infrastructure which are reliant on this service.
+          Found venv_build_targets: {{ venv_build_targets }}
+        condition: >-
+          {{ not venv_wheel_build_enable | bool and ansible_play_batch | length > 2 and not (venv_wheel_build_skip_check | default(False)) }}
+      - msg: |
+          You are trying to build wheels for the distribution or architecture
+          that you don't have build host for.
+          Please, ensure that you have at least 1 host in {{ venv_build_group }} group
+          with the following distribution: {{ _venv_build_dist_arch | replace('-', ' ') }}
+          Otherwise, consider adding matching OS to the group or set
+          `venv_wheel_build_enable: False`. Note, that you can run
+          only in a serial manner when wheel build is disabled.
+          Found venv_build_targets: {{ venv_build_targets }}
+        condition: "{{ venv_wheel_build_enable | bool and _venv_build_dist_arch not in venv_build_targets }}"
+    _venv_wheel_build_blockers: "{{ _venv_wheel_build_errors | selectattr('condition', 'true') }}"
   ansible.builtin.fail:
-    msg: >-
-      You are not building wheels while running role against multiple hosts.
-      This might result in DOS-ing OpenDev infrustructure servers.
-      In order to proceed, please ensure that you have repo servers
-      for selected OS version and architecture.
-      If you want to avoid building wheel on purpose, ensure that you run
-      playbook in serial manner.
-      In case of causing unreasonable load on the opendev.org git servers,
-      your access may be blocked to protect other users and the OpenDev CI
-      infrastructure which are reliant on this service.
-      Found venv_build_targets: {{ venv_build_targets }}
+    msg: "{{ _venv_wheel_build_blockers | map(attribute='msg') | join('\n') }}"
+  any_errors_fatal: true
   when:
-    - not venv_wheel_build_enable | bool
-    - ansible_play_batch | length > 2
-    - not (venv_wheel_build_skip_check | default(False))
-
-- name: Fail if no wheels build host is available
-  ansible.builtin.fail:
-    msg: >-
-      You are trying to build wheels for the distribution or architecture
-      that you don't have build host for.
-      Please, ensure that you have at least 1 host in {{ venv_build_group }} group
-      with the following distribution: {{ _venv_build_dist_arch | replace('-', ' ') }}
-      Otherwise, consider adding matching OS to the group or set
-      `venv_wheel_build_enable: False`. Note, that you can run
-      only in a serial manner when wheel build is disabled.
-      Found venv_build_targets: {{ venv_build_targets }}
-  when:
-    - venv_wheel_build_enable | bool
-    - _venv_build_dist_arch not in venv_build_targets
+    - _venv_wheel_build_blockers | length > 0
 
 - name: Including python_venv_wheel_build tasks
   ansible.builtin.include_tasks: "python_venv_wheel_build.yml"
