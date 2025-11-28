@@ -127,7 +127,7 @@
 - name: Upgrade pip/setuptools/wheel to the versions we want
   ansible.builtin.pip:
     name:
-      - pip
+      - "{{ venv_install_tool }}"
       - setuptools
       - wheel
     state: "{{ venv_pip_package_state }}"
@@ -152,7 +152,7 @@
 
 - name: Install python packages into the venv
   block:
-    - name: Install python packages into the venv
+    - name: Install python packages into the venv (pip)
       ansible.builtin.pip:
         name: "{{ _venv_install_pip_packages }}"
         state: "{{ venv_pip_package_state }}"
@@ -165,9 +165,37 @@
           {{ venv_default_pip_install_args }}
           {{ venv_pip_install_args }}
       environment: "{{ venv_pip_install_env }}"
-      when: _requirement_constraints_file.results | selectattr('changed') | length > 0
+      when:
+        - _requirement_constraints_file.results | selectattr('changed') | length > 0
+        - venv_install_tool == 'pip'
       register: _install_venv_pip_packages
       until: _install_venv_pip_packages is success
+      retries: 5
+      delay: 2
+      notify:
+        - venv changed
+
+    - name: Install python packages into the venv (uv)
+      ansible.builtin.command: >-
+        {{ venv_install_destination_path }}/bin/uv pip
+          {{ (venv_pip_package_state == 'absent') | ternary('uninstall', 'install') }}
+          {% if venv_pip_package_state == 'latest' %}--upgrade{% endif %}
+          {% if venv_pip_package_state == 'forcereinstall' %}--reinstall{% endif %}
+          --python {{ venv_install_destination_path }}/bin/{{ venv_python_executable }}
+          --constraint {{ venv_install_destination_path }}/global-constraints.txt
+          --constraint {{ venv_install_destination_path }}/constraints.txt
+          --prerelease if-necessary-or-explicit
+          {{ venv_default_pip_install_args }}
+          {{ venv_pip_install_args }}
+          {{ _venv_install_pip_packages | join(' ') }}
+      changed_when:
+        - _install_venv_uv_packages.stderr_lines | select('match', '^(Installed|Uninstalled) \d* packages in \d*') | length > 0
+      environment: "{{ venv_pip_install_env }}"
+      when:
+        - _requirement_constraints_file.results | selectattr('changed') | length > 0
+        - venv_install_tool == 'uv'
+      register: _install_venv_uv_packages
+      until: _install_venv_uv_packages is success
       retries: 5
       delay: 2
       notify:
