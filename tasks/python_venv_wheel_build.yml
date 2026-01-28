@@ -75,16 +75,19 @@
       loop:
         - dest: "{{ _venv_build_requirements_prefix }}-requirements.txt"
           content: |-
+            # Managed with python_venv_build role
             {% for item in _venv_pip_packages | select() %}
             {{ item }}
             {% endfor %}
         - dest: "{{ _venv_build_requirements_prefix }}-global-constraints.txt"
           content: |-
+            # Managed with python_venv_build role
             {% for item in venv_build_global_constraints | select() %}
             {{ item }}
             {% endfor %}
         - dest: "{{ _venv_build_requirements_prefix }}-source-constraints.txt"
           content: |-
+            # Managed with python_venv_build role
             {% for item in venv_build_constraints | select() %}
             {{ item }}
             {% endfor %}
