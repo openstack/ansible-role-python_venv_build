@@ -97,10 +97,7 @@
 
     - name: Upgrade the wheel build virtualenv pip/setuptools/wheel to the versions we want
       ansible.builtin.pip:
-        name:
-          - pip
-          - setuptools
-          - wheel
+        name: "{{ ['pip'] + venv_build_requirements }}"
         state: "{{ venv_pip_package_state }}"
         virtualenv: "{{ venv_build_host_venv_path }}"
         virtualenv_command: "{{ venv_python_executable }} -m venv"
@@ -110,6 +107,7 @@
           --find-links {{ venv_build_host_wheel_path }}/
           --trusted-host {{ (openstack_repo_url | default('http://localhost')) | urlsplit('hostname') }}
           --log /var/log/python_venv_build.log
+          {{ venv_default_pip_build_args }}
           {{ venv_pip_build_args }}
       environment: "{{ venv_pip_build_env | combine(_pip_upgrade_noconf) }}"
       vars:
@@ -138,6 +136,7 @@
             --find-links {{ venv_build_host_wheel_path }}/
             --trusted-host {{ (openstack_repo_url | default('http://localhost')) | urlsplit('hostname') }}
             --log /var/log/python_wheel_build.log
+            {{ venv_default_pip_build_args }}
             {{ venv_pip_build_args }}
             {{ venv_wheels_rebuild | ternary('--no-cache-dir', '') }}
           environment: "{{ venv_pip_build_env }}"

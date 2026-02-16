@@ -67,6 +67,14 @@ venv_pip_packages: []
 # ref: https://github.com/pypa/pip/issues/4195
 venv_pip_upgrade_noconf: false
 
+
+# A list of requirements which are needed for successfull
+# build and installation of packages into the venv.
+venv_build_requirements:
+  - pbr
+  - setuptools
+  - wheel
+
 # A list of constraints to be applied when building
 # or installing python packages.
 venv_build_constraints: []
@@ -75,6 +83,10 @@ venv_build_constraints: []
 # constraints ahead of the list in venv_build_constraints.
 # This is useful for global pins across all venvs.
 venv_build_global_constraints: []
+
+# Default arguments to pass to pip when building the wheels
+venv_default_pip_build_args:
+  --no-build-isolation
 
 # Arguments to pass to pip when building the wheels
 venv_pip_build_args: ""
@@ -91,6 +103,7 @@ venv_default_pip_install_args: >-
   {%- endif %}
   --trusted-host {{ (openstack_repo_url | default('http://localhost')) | urlsplit('hostname') -}}
   {%- endif %}
+  --no-build-isolation
 
 # Arguments to pass to pip when installing into the venv
 venv_pip_install_args: ""
