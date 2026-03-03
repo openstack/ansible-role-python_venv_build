@@ -1,0 +1,18 @@
+---
+httpd_vhosts:
+  - name: wheels
+    address: "{{ molecule_httpd_address }}"
+    port: "{{ molecule_httpd_port }}"
+    document_root: "{{ molecule_httpd_document_root }}"
+    headers:
+      - 'Header set X-WHOAMI "Private Wheels Repository {{ inventory_hostname }}"'
+    directories:
+      - path: "{{ molecule_httpd_document_root }}"
+        options:
+          - Options +FollowSymlinks +Indexes
+          - AllowOverride None
+          - AddOutputFilterByType DEFLATE application/json
+          - AddOutputFilterByType DEFLATE text/javascript
+          - AddOutputFilterByType DEFLATE text/plain
+          - AddOutputFilterByType DEFLATE text/xml
+    ssl: false

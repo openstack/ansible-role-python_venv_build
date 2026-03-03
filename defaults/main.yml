@@ -157,7 +157,7 @@ venv_build_group: repo_all
 # subsequent venv builds on this host and others. When
 # this is the same as the target host, then we will not
 # bother building wheels.
-venv_build_host: "{{ venv_build_targets[_venv_build_dist_arch] }}"
+venv_build_host: "{{ (venv_wheel_build_enable | bool) | ternary(venv_build_targets[_venv_build_dist_arch], inventory_hostname) }}"
 
 # The owner of directories and files held on the build host.
 # venv_build_host_user_name: "root"

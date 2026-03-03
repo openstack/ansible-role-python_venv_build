@@ -1,0 +1,25 @@
+---
+venv_facts_dest: test-venv
+venv_pip_packages:
+  - "{{ molecule_pip_package }}"
+
+venv_install_destination_path: "/openstack/venvs/{{ venv_facts_dest }}"
+
+venv_facts_when_changed:
+  - section: "{{ inventory_hostname }}"
+    option: "test"
+    value: true
+
+venv_install_distro_package_list:
+  - "{{ molecule_install_package[ansible_facts['os_family'] | lower] }}"
+
+venv_build_distro_package_list:
+  - "{{ molecule_build_package[ansible_facts['os_family'] | lower] }}"
+
+venv_packages_to_symlink:
+  - "{{ molecule_install_package[ansible_facts['os_family'] | lower] }}"
+
+venv_build_constraints:
+  - "--constraint {{ molecule_build_constraints }}"
+
+venv_build_global_constraints: "{{ molecule_build_global_constraints }}"

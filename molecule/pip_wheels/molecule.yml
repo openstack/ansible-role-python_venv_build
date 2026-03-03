@@ -1,0 +1,58 @@
+---
+dependency:
+  name: galaxy
+  options:
+    requirements-file: requirements.yml
+    force: ${GALAXY_FORCE:-false}
+
+driver:
+  name: docker
+
+platforms:
+  - name: "httpd-${MOLECULE_SCENARIO_NAME}"
+    image: "${DOCKER_REGISTRY:-quay.io/gotmax23}/${DOCKER_IMAGE_TAG:-debian-systemd:trixie}"
+    command: ${DOCKER_COMMAND:-""}
+    pre_build_image: true
+    privileged: true
+    systemd: true
+    networks:
+      - name: venvs
+        ipv4_address: 172.18.0.2
+    docker_networks:
+      - name: venvs
+        ipam_config:
+          - subnet: 172.18.0.0/16
+    groups:
+      - httpd
+
+  - name: "venv-${MOLECULE_SCENARIO_NAME}"
+    image: "${DOCKER_REGISTRY:-quay.io/gotmax23}/${DOCKER_IMAGE_TAG:-debian-systemd:trixie}"
+    command: ${DOCKER_COMMAND:-""}
+    pre_build_image: true
+    privileged: true
+    systemd: true
+    networks:
+      - name: venvs
+        ipv4_address: 172.18.0.3
+    groups:
+      - pip
+      - venv
+      - wheels
+
+provisioner:
+  name: ansible
+  lint:
+    name: ansible-lint
+  playbooks:
+    prepare: ../../tests/prepare.yml
+    converge: ../../tests/test.yml
+    verify: ../../tests/verify.yml
+  inventory:
+    links:
+      group_vars: ../../tests/group_vars/
+  config_options:
+    defaults:
+      inject_facts_as_vars: false
+
+scenario:
+  name: pip_wheels
