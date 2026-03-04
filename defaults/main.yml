@@ -75,6 +75,9 @@ venv_build_requirements:
   - setuptools
   - wheel
 
+# Additional build venv dependencies
+venv_build_requirements_extra: []
+
 # A list of constraints to be applied when building
 # or installing python packages.
 venv_build_constraints: []
