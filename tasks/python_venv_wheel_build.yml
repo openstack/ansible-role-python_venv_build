@@ -183,3 +183,20 @@
             owner: "{{ venv_build_host_user_name | default(omit) }}"
             group: "{{ venv_build_host_group_name | default(omit) }}"
             mode: "0644"
+  rescue:
+    - name: Remove wheels requirements/constraints files due to build failure
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      with_items:
+        - "{{ _venv_build_requirements_prefix }}-requirements.txt"
+        - "{{ _venv_build_requirements_prefix }}-global-constraints.txt"
+        - "{{ _venv_build_requirements_prefix }}-source-constraints.txt"
+        - "{{ _venv_build_requirements_prefix }}-constraints.txt"
+        - "/tmp/{{ venv_install_destination_path | basename }}"
+
+    - name: Show venv install failure message
+      ansible.builtin.fail:
+        msg: >
+          The python packages have failed to install, please check the log file
+          located at /var/log/python_wheel_build.log for more information.
