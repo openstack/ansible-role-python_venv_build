@@ -1,0 +1,10 @@
+---
+collections:
+  - name: https://github.com/ansible-collections/community.general
+    type: git
+    version: main
+roles:
+  - name: httpd
+    version: master
+    scm: git
+    src: https://opendev.org/openstack/ansible-role-httpd

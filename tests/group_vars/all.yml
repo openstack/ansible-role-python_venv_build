@@ -1,0 +1,17 @@
+---
+molecule_test_branch: "{{ lookup('ansible.builtin.env', 'TEST_BRANCH', default='master') }}"
+molecule_build_constraints: >-
+  {{ lookup('ansible.builtin.env', 'TOX_CONSTRAINTS_FILE', default='https://releases.openstack.org/constraints/upper/' ~ molecule_test_branch) }}
+molecule_build_constraints_url: "https://opendev.org/openstack/openstack-ansible/raw/branch/{{ molecule_test_branch }}/global-requirement-pins.txt"
+molecule_build_global_constraints: >-
+  {{ lookup('ansible.builtin.url', molecule_build_constraints_url, wantlist=True) | reject('match','^#.*$') | reject('equalto', '') | list }}
+molecule_build_package:
+  debian: libxml2-dev
+  redhat: libxml2-devel
+molecule_install_package:
+  debian: python3-guestfs
+  redhat: python3-libguestfs
+molecule_pip_package: Jinja2
+molecule_httpd_address: "172.18.0.2"
+molecule_httpd_port: 8181
+molecule_httpd_document_root: /var/www/repo

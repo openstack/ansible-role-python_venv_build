@@ -1,0 +1,151 @@
+---
+# Copyright 2026, Cleura AB.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: Verify the python_venv_role results
+  hosts: httpd
+  tasks:
+
+    - name: Calculate httpd wheels paths
+      vars:
+        _distro_version: >-
+          {{ (ansible_facts['distribution'] | lower == 'ubuntu') | ternary(
+            ansible_facts['distribution_version'].split('.')[:2] | join('.'),
+            ansible_facts['distribution_major_version']
+          ) }}
+        _constraints_content_lookup: >-
+          {{ ('http' in molecule_build_constraints or 'https' in molecule_build_constraints) | ternary('ansible.builtin.url', 'ansible.builtin.file') }}
+        _constraints_content: "{{ lookup(_constraints_content_lookup, molecule_build_constraints, split_lines=false) | split('\n') }}"
+        _constrained_package: "{{ _constraints_content | select('search', molecule_pip_package) | first | split('=') }}"
+      ansible.builtin.set_fact:
+        _repo_distro_path: >-
+          {{
+            ((ansible_facts['distribution'] | lower) | replace(' ', '_')) ~ '-' ~
+            _distro_version ~ '-' ~
+            (ansible_facts['architecture'] | lower)
+          }}
+        _constrained_package_name: "{{ _constrained_package | first | lower ~ '-' ~ _constrained_package | last ~ '-py3-none-any.whl' }}"
+
+    - name: Find wheels files on targets
+      ansible.builtin.find:
+        file_type: file
+        get_checksum: false
+        recurse: false
+        paths:
+          - "{{ molecule_httpd_document_root }}/os-releases/{{ molecule_test_branch }}/{{ _repo_distro_path }}/wheels/"
+      register: _target_folders
+
+    - name: Check that wheels for the package exist
+      ansible.builtin.assert:
+        that:
+          - _target_folders.files | map(attribute='path') | list | select('search', _constrained_package_name) | length > 0
+
+    - name: Ensure wheels are available via URI
+      delegate_to: "{{ groups['wheels'] | first }}"
+      ansible.builtin.uri:
+        url: "http://{{ molecule_httpd_address }}:{{ molecule_httpd_port }}/os-releases/{{ molecule_test_branch }}/{{ _repo_distro_path }}/wheels/{{ _constrained_package_name }}" # noqa: yaml[line-length]
+
+- name: Verify the python_venv_role results
+  hosts: venv
+  remote_user: root
+  any_errors_fatal: true
+  tasks:
+
+    - name: Refresh local facts
+      ansible.builtin.setup:
+        filter: ansible_local
+        gather_subset: "!all"
+
+    - name: Gather installed packages
+      ansible.builtin.package_facts:
+
+    - name: Show the ansible_local facts
+      ansible.builtin.debug:
+        var: ansible_local
+
+    - name: Verify that the facts were set and handler was run
+      ansible.builtin.assert:
+        that:
+          - ansible_local[venv_facts_dest][inventory_hostname]['test'] | bool
+          - ansible_local[venv_facts_dest][inventory_hostname]['handler'] | bool
+
+    - name: Find files/folders on targets
+      ansible.builtin.find:
+        file_type: directory
+        get_checksum: false
+        recurse: false
+        paths:
+          - "{{ venv_install_destination_path | dirname }}"
+      register: _target_folders
+
+    - name: Compile the folder list from the targets
+      ansible.builtin.set_fact:
+        _target_folder_list: "{{ _target_folders['files'] | map(attribute='path') | list }}"
+
+    - name: Show the files/folder from the targets
+      ansible.builtin.debug:
+        var: _target_folder_list
+
+    - name: Verify the folder list from the targets
+      ansible.builtin.assert:
+        that:
+          - venv_install_destination_path in _target_folder_list
+
+    - name: Verify that required system packages were installed
+      ansible.builtin.assert:
+        that:
+          - molecule_install_package[ansible_facts['os_family'] | lower] in ansible_facts.packages
+          # Check that build package is installed on the venv host when wheels not build
+          - (venv_wheel_build_enable | bool) | ternary(
+              molecule_build_package[ansible_facts['os_family'] | lower] not in ansible_facts.packages,
+              molecule_build_package[ansible_facts['os_family'] | lower] in  ansible_facts.packages
+            )
+
+    - name: List packages inside of the venv
+      ansible.builtin.command:
+        argv:
+          - "{{ venv_install_destination_path }}/bin/pip3"
+          - list
+          - --format
+          - json
+      changed_when: false
+      register: _venv_state
+
+    - name: Set fact with installed package details
+      ansible.builtin.set_fact:
+        _venv_package_state: "{{ _venv_state.stdout | from_json }}"
+
+    - name: Verify packages were installed into the venv
+      ansible.builtin.assert:
+        that:
+          - _venv_package_state | selectattr('name', 'eq', molecule_pip_package) | length > 0
+          - _venv_package_state | selectattr('name', 'eq', venv_install_tool) | length > 0
+
+    - name: Verify package versions inside of the venv
+      vars:
+        _constraints_content_lookup: >-
+          {{ ('http' in molecule_build_constraints or 'https' in molecule_build_constraints) | ternary('ansible.builtin.url', 'ansible.builtin.file') }}
+        _constraints_content: "{{ lookup(_constraints_content_lookup, molecule_build_constraints, split_lines=false) | split('\n') }}"
+        _venv_package_expected: "{{ _venv_package_state | selectattr('name', 'eq', molecule_pip_package) | first }}"
+      ansible.builtin.assert:
+        that:
+          - _venv_package_expected.name ~ '===' ~ _venv_package_expected.version in _constraints_content
+
+    - name: Ensure symlinking of system package to venv happened
+      ansible.builtin.command:
+        argv:
+          - "{{ venv_install_destination_path }}/bin/python3"
+          - -c
+          - "'import guestfs'"
+      changed_when: false

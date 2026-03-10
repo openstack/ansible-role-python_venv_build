@@ -1,0 +1,5 @@
+---
+venv_wheel_build_enable: true
+venv_build_group: httpd
+openstack_repo_url: http://{{ molecule_httpd_address }}:{{ molecule_httpd_port }}
+openstack_release: "{{ molecule_test_branch }}"
