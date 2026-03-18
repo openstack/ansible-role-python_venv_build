@@ -27,7 +27,7 @@
         _constraints_content_lookup: >-
           {{ ('http' in molecule_build_constraints or 'https' in molecule_build_constraints) | ternary('ansible.builtin.url', 'ansible.builtin.file') }}
         _constraints_content: "{{ lookup(_constraints_content_lookup, molecule_build_constraints, split_lines=false) | split('\n') }}"
-        _constrained_package: "{{ _constraints_content | select('search', molecule_pip_package) | first | split('=') }}"
+        _constrained_package: "{{ _constraints_content | select('search', molecule_pip_package_simple) | first | split('=') }}"
       ansible.builtin.set_fact:
         _repo_distro_path: >-
           {{
@@ -126,10 +126,16 @@
       ansible.builtin.set_fact:
         _venv_package_state: "{{ _venv_state.stdout | from_json }}"
 
+    - name: Print installed packages
+      ansible.builtin.debug:
+        var: _venv_package_state
+
     - name: Verify packages were installed into the venv
       ansible.builtin.assert:
         that:
-          - _venv_package_state | selectattr('name', 'eq', molecule_pip_package) | length > 0
+          - _venv_package_state | selectattr('name', 'eq', molecule_pip_package_simple) | length > 0
+          - _venv_package_state | selectattr('name', 'eq', molecule_pip_package_egg | split('egg=') | last) | length > 0
+          - _venv_package_state | selectattr('name', 'eq', molecule_pip_package_direct | split('@') | first | trim) | length > 0
           - _venv_package_state | selectattr('name', 'eq', venv_install_tool) | length > 0
 
     - name: Verify package versions inside of the venv
@@ -137,7 +143,7 @@
         _constraints_content_lookup: >-
           {{ ('http' in molecule_build_constraints or 'https' in molecule_build_constraints) | ternary('ansible.builtin.url', 'ansible.builtin.file') }}
         _constraints_content: "{{ lookup(_constraints_content_lookup, molecule_build_constraints, split_lines=false) | split('\n') }}"
-        _venv_package_expected: "{{ _venv_package_state | selectattr('name', 'eq', molecule_pip_package) | first }}"
+        _venv_package_expected: "{{ _venv_package_state | selectattr('name', 'eq', molecule_pip_package_simple) | first }}"
       ansible.builtin.assert:
         that:
           - _venv_package_expected.name ~ '===' ~ _venv_package_expected.version in _constraints_content
