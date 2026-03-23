@@ -175,6 +175,7 @@
         - name: Build constraints file for installation purposes
           ansible.builtin.copy:
             content: |-
+              # Managed with python_venv_build role
               {% for file_data in _built_wheels['files'] %}
               {%   set file_name = file_data['path'] | basename %}
               {{ file_name.split('-')[0] | lower }}=={{ (file_name.split('-')[1].split('_')) | join('.post') | lower }}

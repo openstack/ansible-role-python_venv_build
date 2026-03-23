@@ -115,15 +115,15 @@
     - dest: "{{ venv_install_destination_path }}/constraints.txt"
       content: |-
         # Managed with python_venv_build role
-        {%- if (venv_wheel_build_enable | bool) and
+        {% if (venv_wheel_build_enable | bool) and
               (_constraints_file_slurp is defined) and
               (_constraints_file_slurp.content is defined) %}
         {{ _constraints_file_slurp.content | b64decode }}
-        {%- else %}
+        {% else %}
         {%   for item in venv_build_constraints | select() %}
         {{ item }}
         {%   endfor %}
-        {%- endif %}
+        {% endif %}
   loop_control:
     label: "{{ item.dest }}"
   register: _requirement_constraints_file

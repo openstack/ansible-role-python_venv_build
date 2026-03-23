@@ -56,6 +56,26 @@
       ansible.builtin.uri:
         url: "http://{{ molecule_httpd_address }}:{{ molecule_httpd_port }}/os-releases/{{ molecule_test_branch }}/{{ _repo_distro_path }}/wheels/{{ _constrained_package_name }}" # noqa: yaml[line-length]
 
+    - name: Slurp generated requirements and constraints files
+      vars:
+        __wheels_requirements_path: "{{ molecule_httpd_document_root }}/os-releases/{{ molecule_test_branch }}/{{ _repo_distro_path }}/requirements"
+      ansible.builtin.slurp:
+        src: "{{ __wheels_requirements_path }}/test-venv-{{ item }}"
+      register: _wheel_req_files
+      loop:
+        - requirements.txt
+        - constraints.txt
+        - global-constraints.txt
+        - source-constraints.txt
+
+    - name: Check that files have correct header with newline
+      ansible.builtin.assert:
+        that:
+          - (item.content | b64decode | split('\n') | first) == '# Managed with python_venv_build role'
+      loop: "{{ _wheel_req_files.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
 - name: Verify the python_venv_role results
   hosts: venv
   remote_user: root
@@ -149,3 +169,20 @@
           - -c
           - "'import guestfs'"
       changed_when: false
+
+    - name: Slurp generated requirements and constraints files
+      ansible.builtin.slurp:
+        src: "{{ venv_install_destination_path }}/{{ item }}"
+      register: _venv_files
+      loop:
+        - requirements.txt
+        - constraints.txt
+        - global-constraints.txt
+
+    - name: Check that files have correct header with newline
+      ansible.builtin.assert:
+        that:
+          - (item.content | b64decode | split('\n') | first) == '# Managed with python_venv_build role'
+      loop: "{{ _venv_files.results }}"
+      loop_control:
+        label: "{{ item.item }}"
