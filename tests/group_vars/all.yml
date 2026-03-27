@@ -11,7 +11,10 @@ molecule_build_package:
 molecule_install_package:
   debian: python3-guestfs
   redhat: python3-libguestfs
-molecule_pip_package: Jinja2
+molecule_pip_package_simple: Jinja2
+molecule_pip_package_egg: git+https://github.com/jmespath/jmespath.py@1.1.0#egg=jmespath
+molecule_pip_package_direct: PyYAML@git+https://github.com/yaml/pyyaml@6.0.3
+
 molecule_httpd_address: "172.18.0.2"
 molecule_httpd_port: 8181
 molecule_httpd_document_root: /var/www/repo

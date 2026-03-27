@@ -1,7 +1,9 @@
 ---
 venv_facts_dest: test-venv
 venv_pip_packages:
-  - "{{ molecule_pip_package }}"
+  - "{{ molecule_pip_package_simple }}"
+  - "{{ molecule_pip_package_egg }}"
+  - "{{ molecule_pip_package_direct }}"
 
 venv_install_destination_path: "/openstack/venvs/{{ venv_facts_dest }}"
 

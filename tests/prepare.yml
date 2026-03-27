@@ -16,6 +16,18 @@
 - name: Copy constraints to the containers when needed
   hosts: all
   tasks:
+    - name: Install required packages
+      vars:
+        _install_packages:
+          redhat:
+            - git-core
+          debian:
+            - git
+      ansible.builtin.package:
+        name: "{{ _install_packages[ansible_facts['os_family'] | lower] }}"
+        state: present
+        update_cache: true
+
     - name: Copy constraints to the host when it's a file
       when: not ('http' in molecule_build_constraints or 'https' in molecule_build_constraints)
       block:
