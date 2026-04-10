@@ -137,7 +137,7 @@
 
 - name: Upgrade pip/setuptools/wheel to the versions we want
   ansible.builtin.pip:
-    name: "{{ [venv_install_tool] + venv_build_requirements }}"
+    name: "{{ [venv_install_tool] + venv_build_requirements + venv_build_requirements_extra }}"
     state: "{{ venv_pip_package_state }}"
     virtualenv: "{{ venv_install_destination_path }}"
     virtualenv_command: "{{ venv_python_executable }} -m venv"
