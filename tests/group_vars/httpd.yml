@@ -15,4 +15,8 @@ httpd_vhosts:
           - AddOutputFilterByType DEFLATE text/javascript
           - AddOutputFilterByType DEFLATE text/plain
           - AddOutputFilterByType DEFLATE text/xml
+          - RewriteEngine On
+          - RewriteCond %{REQUEST_FILENAME} !-f
+          - RewriteCond %{REQUEST_FILENAME} !-d
+          - RewriteRule ^/?os-releases/[^/]+/[^/]+/simple/([^/]+)/?$ https://pypi.org/simple/$1/ [R=302,L]
     ssl: false

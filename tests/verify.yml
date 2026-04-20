@@ -51,10 +51,46 @@
         that:
           - _target_folders.files | map(attribute='path') | list | select('search', _constrained_package_name) | length > 0
 
+    - name: Get wheel file stat and sha256 checksum
+      ansible.builtin.stat:
+        path: "{{ molecule_httpd_document_root }}/os-releases/{{ molecule_test_branch }}/{{ _repo_distro_path }}/wheels/{{ _constrained_package_name }}"
+        checksum_algorithm: sha256
+        get_checksum: true
+      register: _wheel_stat
+
     - name: Ensure wheels are available via URI
       delegate_to: "{{ groups['wheels'] | first }}"
       ansible.builtin.uri:
         url: "http://{{ molecule_httpd_address }}:{{ molecule_httpd_port }}/os-releases/{{ molecule_test_branch }}/{{ _repo_distro_path }}/wheels/{{ _constrained_package_name }}" # noqa: yaml[line-length]
+
+    - name: Ensure wheel file is available under Simple index path
+      delegate_to: "{{ groups['wheels'] | first }}"
+      ansible.builtin.uri:
+        url: >-
+          http://{{ molecule_httpd_address }}:{{ molecule_httpd_port }}/os-releases/{{ molecule_test_branch }}/{{ _repo_distro_path }}/simple/{{
+            _constrained_package_name | split('-') | first | lower | replace('_', '-') | replace('.', '-') }}/{{ _constrained_package_name }}
+
+    - name: Ensure package simple index.html is available and fetch content
+      delegate_to: "{{ groups['wheels'] | first }}"
+      ansible.builtin.uri:
+        url: >-
+          http://{{ molecule_httpd_address }}:{{ molecule_httpd_port }}/os-releases/{{ molecule_test_branch }}/{{ _repo_distro_path }}/simple/{{
+            _constrained_package_name | split('-') | first | lower | replace('_', '-') | replace('.', '-') }}/
+        return_content: true
+      register: _package_simple_index
+
+    - name: Verify index.html checksum matches actual wheel file checksum
+      vars:
+        _index_wheel_sha256: >-
+          {{
+            (_package_simple_index.content |
+             regex_findall(_constrained_package_name ~ '#sha256=([a-f0-9]+)') |
+             first) | default('')
+          }}
+      ansible.builtin.assert:
+        that:
+          - _index_wheel_sha256 | length == 64
+          - _index_wheel_sha256 == _wheel_stat.stat.checksum
 
     - name: Slurp generated requirements and constraints files
       vars:

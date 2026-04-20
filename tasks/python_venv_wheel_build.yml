@@ -62,6 +62,7 @@
         mode: "0755"
       with_items:
         - "{{ venv_build_host_wheel_path }}"
+        - "{{ venv_build_host_wheel_path | dirname }}/simple"
         - "{{ venv_build_host_requirements_path }}"
         - "{{ venv_build_host_venv_path }}"
 
@@ -76,7 +77,7 @@
         - dest: "{{ _venv_build_requirements_prefix }}-requirements.txt"
           content: |-
             # Managed with python_venv_build role
-            {% for item in _venv_pip_packages | select() %}
+            {% for item in (_venv_pip_packages + _venv_build_packages) | select() %}
             {{ item }}
             {% endfor %}
         - dest: "{{ _venv_build_requirements_prefix }}-global-constraints.txt"
@@ -97,7 +98,7 @@
 
     - name: Upgrade the wheel build virtualenv pip/setuptools/wheel to the versions we want
       ansible.builtin.pip:
-        name: "{{ ['pip'] + venv_build_requirements + venv_build_requirements_extra }}"
+        name: "{{ _venv_build_packages }}"
         state: "{{ venv_pip_package_state }}"
         virtualenv: "{{ venv_build_host_venv_path }}"
         virtualenv_command: "{{ venv_python_executable }} -m venv"
@@ -128,24 +129,20 @@
       when: (_requirements_contraints.results | selectattr('changed') | length > 0) or
         (not python_venv_built_resulting_constrains.stat.exists)
       block:
-        - name: Clean up temporary wheel build path
-          ansible.builtin.file:
-            path: "/tmp/{{ venv_install_destination_path | basename }}"
-            state: absent
-
-        - name: Build wheels for the packages to be installed into the venv # noqa: no-changed-when
-          ansible.builtin.command: >-
-            {{  venv_build_host_venv_path }}/bin/pip wheel
-            --requirement {{ _venv_build_requirements_prefix }}-requirements.txt
-            --constraint {{ _venv_build_requirements_prefix }}-global-constraints.txt
-            --constraint {{ _venv_build_requirements_prefix }}-source-constraints.txt
-            --wheel-dir /tmp/{{ venv_install_destination_path | basename }}/
-            --find-links {{ venv_build_host_wheel_path }}/
-            --trusted-host {{ (openstack_repo_url | default('http://localhost')) | urlsplit('hostname') }}
-            --log /var/log/python_wheel_build.log
-            {{ venv_default_pip_build_args }}
-            {{ venv_pip_build_args }}
-            {{ venv_wheels_rebuild | ternary('--no-cache-dir', '') }}
+        - name: Build wheels and create PEP 503 simple index
+          pep503_wheel_build:
+            virtualenv: "{{ venv_build_host_venv_path }}"
+            requirements_file: "{{ _venv_build_requirements_prefix }}-requirements.txt"
+            global_constraints_file: "{{ _venv_build_requirements_prefix }}-global-constraints.txt"
+            source_constraints_file: "{{ _venv_build_requirements_prefix }}-source-constraints.txt"
+            wheel_dir: "{{ venv_build_host_wheel_path }}"
+            index_url: >-
+              {{ openstack_repo_url | default('http://localhost') }}/os-releases/{{ openstack_release | default('master') }}/{{ _venv_build_dist_arch }}/simple/
+            trusted_host: "{{ (openstack_repo_url | default('http://localhost')) | urlsplit('hostname') }}"
+            log_file: "/var/log/python_wheel_build.log"
+            build_args: "{{ venv_default_pip_build_args }} {{ venv_pip_build_args }}"
+            owner: "{{ venv_build_host_user_name | default(omit) }}"
+            group: "{{ venv_build_host_group_name | default(omit) }}"
           environment: "{{ venv_pip_build_env | combine(_venv_pip_build_env_path) }}"
           vars:
             _venv_pip_build_env_path:
@@ -155,37 +152,12 @@
           retries: 5
           delay: 2
 
-        - name: Index built wheels
-          ansible.builtin.find:
-            paths: "/tmp/{{ venv_install_destination_path | basename }}"
-            file_type: file
-          register: _built_wheels
-
-        - name: Set wheel permissions
-          ansible.builtin.file:
-            path: "/tmp/{{ venv_install_destination_path | basename }}"
-            owner: "{{ venv_build_host_user_name | default(omit) }}"
-            group: "{{ venv_build_host_group_name | default(omit) }}"
-            state: directory
-            recurse: true
-          when:
-            - (venv_build_host_user_name is defined) or
-              (venv_build_host_group_name is defined)
-
-        - name: Move built wheels to common wheel path
-          ansible.builtin.shell: >-
-            mv /tmp/{{ venv_install_destination_path | basename }}/* {{ venv_build_host_wheel_path }}/
-          changed_when: false
-          args:
-            executable: /bin/bash
-
         - name: Build constraints file for installation purposes
           ansible.builtin.copy:
             content: |-
               # Managed with python_venv_build role
-              {% for file_data in _built_wheels['files'] %}
-              {%   set file_name = file_data['path'] | basename %}
-              {{ file_name.split('-')[0] | lower }}=={{ (file_name.split('-')[1].split('_')) | join('.post') | lower }}
+              {% for item in _build_python_wheels.constraints %}
+              {{ item }}
               {% endfor %}
             dest: "{{ _venv_build_requirements_prefix }}-constraints.txt"
             owner: "{{ venv_build_host_user_name | default(omit) }}"
@@ -201,7 +173,6 @@
         - "{{ _venv_build_requirements_prefix }}-global-constraints.txt"
         - "{{ _venv_build_requirements_prefix }}-source-constraints.txt"
         - "{{ _venv_build_requirements_prefix }}-constraints.txt"
-        - "/tmp/{{ venv_install_destination_path | basename }}"
 
     - name: Show venv install failure message
       ansible.builtin.fail:

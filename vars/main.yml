@@ -86,6 +86,7 @@ _venv_wheels_first_play_hosts: |-
   {{ first_hosts }}
 
 _venv_pip_packages: "{{ (venv_default_pip_packages | union(venv_pip_packages)) | sort | select | list }}"
+_venv_build_packages: "{{ (['pip'] + [venv_install_tool] + venv_build_requirements + venv_build_requirements_extra) | unique }}"
 
 _venv_build_dist: >-
   {{ (ansible_facts['distribution'] | lower == 'ubuntu') | ternary(
