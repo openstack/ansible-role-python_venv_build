@@ -108,8 +108,15 @@
       retries: 5
       delay: 2
 
+    - name: Check presence of resulting constraints file
+      ansible.builtin.stat:
+        path: "{{ _venv_build_requirements_prefix }}-constraints.txt"
+      register:
+        python_venv_built_resulting_constrains
+
     - name: Build wheels and constraints file
-      when: _requirements_contraints.results | selectattr('changed') | length > 0
+      when: (_requirements_contraints.results | selectattr('changed') | length > 0) or
+        (not python_venv_built_resulting_constrains.stat.exists)
       block:
         - name: Clean up temporary wheel build path
           ansible.builtin.file:
