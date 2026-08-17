@@ -14,7 +14,6 @@ platforms:
     command: ${DOCKER_COMMAND:-""}
     pre_build_image: true
     privileged: true
-    systemd: true
     networks:
       - name: venvs
         ipv4_address: 172.18.0.2
@@ -30,7 +29,6 @@ platforms:
     command: ${DOCKER_COMMAND:-""}
     pre_build_image: true
     privileged: true
-    systemd: true
     networks:
       - name: venvs
         ipv4_address: 172.18.0.3
