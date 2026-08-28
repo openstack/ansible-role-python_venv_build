@@ -31,8 +31,8 @@
         'rpm -ql ' ~ (venv_packages_to_symlink | join(' '))
       )
     }}
-    | egrep '^.*{{ _venv_python_major_version }}.*/(site|dist)-packages/.*'
-    | egrep -v "__pycache__"
+    | grep -E '^.*{{ _venv_python_major_version }}.*/(site|dist)-packages/.*'
+    | grep -E -v "__pycache__"
   changed_when: false
   register: _python_files
   tags:
