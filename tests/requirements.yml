@@ -1,0 +1,16 @@
+---
+collections:
+  - name: community.library_inventory_filtering_v1
+    source: https://github.com/ansible-collections/community.library_inventory_filtering
+    type: git
+  - name: community.docker
+    source: https://github.com/ansible-collections/community.docker
+    type: git
+  - name: ansible.posix
+    source: https://github.com/ansible-collections/ansible.posix
+    type: git
+roles:
+  - name: httpd
+    version: master
+    scm: git
+    src: https://opendev.org/openstack/ansible-role-httpd

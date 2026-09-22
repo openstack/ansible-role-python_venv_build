@@ -1,10 +1,8 @@
 ---
 collections:
-  - name: https://github.com/ansible-collections/community.general
+  - name: community.library_inventory_filtering_v1
+    source: https://github.com/ansible-collections/community.library_inventory_filtering
     type: git
-    version: main
-roles:
-  - name: httpd
-    version: master
-    scm: git
-    src: https://opendev.org/openstack/ansible-role-httpd
+  - name: community.general
+    source: https://github.com/ansible-collections/community.general
+    type: git
