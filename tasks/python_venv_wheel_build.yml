@@ -76,7 +76,7 @@
         - dest: "{{ _venv_build_requirements_prefix }}-requirements.txt"
           content: |-
             # Managed with python_venv_build role
-            {% for item in _venv_pip_packages | select() %}
+            {% for item in (_venv_pip_packages + _venv_build_packages) | select() %}
             {{ item }}
             {% endfor %}
         - dest: "{{ _venv_build_requirements_prefix }}-global-constraints.txt"
@@ -97,7 +97,7 @@
 
     - name: Upgrade the wheel build virtualenv pip/setuptools/wheel to the versions we want
       ansible.builtin.pip:
-        name: "{{ ['pip'] + venv_build_requirements + venv_build_requirements_extra }}"
+        name: "{{ _venv_build_packages }}"
         state: "{{ venv_pip_package_state }}"
         virtualenv: "{{ venv_build_host_venv_path }}"
         virtualenv_command: "{{ venv_python_executable }} -m venv"
